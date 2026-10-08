@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased selection:bg-brand-500 selection:text-white;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+}
+
+/* Custom scrollbars for document preview */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Shimmer animation for AI loading state */
+@keyframes shimmerWave {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.ai-skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(241, 245, 249, 0.9) 25%,
+    rgba(226, 232, 240, 0.9) 37%,
+    rgba(241, 245, 249, 0.9) 63%
+  );
+  background-size: 400% 100%;
+  animation: shimmerWave 1.4s ease infinite;
+}
+
+.ai-skeleton-purple {
+  background: linear-gradient(
+    90deg,
+    rgba(238, 242, 255, 0.9) 25%,
+    rgba(224, 231, 255, 0.9) 37%,
+    rgba(238, 242, 255, 0.9) 63%
+  );
+  background-size: 400% 100%;
+  animation: shimmerWave 1.4s ease infinite;
+}
