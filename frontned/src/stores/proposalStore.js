@@ -345,6 +345,111 @@ Guided by your strategic mandate—"${aiPromptContext.value}"—our solution del
     isGenerating.value.full = false
   }
 
+  // Directory of all generated proposals
+  const proposalsList = ref([
+    {
+      id: 'PROP-2026-884',
+      title: 'Strategic AI Modernization & Cost Optimization Proposal',
+      clientId: 'client-1',
+      clientName: 'Sarah Jenkins',
+      clientCompany: 'Apex Retail Solutions',
+      clientAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
+      industry: 'E-Commerce & Retail',
+      status: 'Drafting',
+      total: 37654.50,
+      itemCount: 3,
+      date: 'Oct 08, 2026',
+      aiScore: '98%',
+      aiAngle: 'Cost-Saving Focus & ROI',
+      aiSummary: 'Turnkey AI modernization reducing recurring operational overhead by 42% with guaranteed 6-month ROI.',
+    },
+    {
+      id: 'PROP-2026-883',
+      title: 'Autonomous Healthcare Pipeline & SOC2 Hardening',
+      clientId: 'client-2',
+      clientName: 'David Chen',
+      clientCompany: 'OmniHealth Technologies',
+      clientAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+      industry: 'Healthcare & Biotech',
+      status: 'Sent',
+      total: 64200.00,
+      itemCount: 4,
+      date: 'Oct 05, 2026',
+      aiScore: '94%',
+      aiAngle: 'Security & Compliance',
+      aiSummary: 'HIPAA and SOC2 compliance automation and microservices zero-downtime failover architecture.',
+    },
+    {
+      id: 'PROP-2026-882',
+      title: 'FinTech Cloud Infrastructure Resilience Sprint',
+      clientId: 'client-3',
+      clientName: 'Elena Rostova',
+      clientCompany: 'FinVanguard Global',
+      clientAvatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
+      industry: 'Financial Services',
+      status: 'Approved',
+      total: 112000.00,
+      itemCount: 5,
+      date: 'Oct 02, 2026',
+      aiScore: '99%',
+      aiAngle: 'Speed-to-Market',
+      aiSummary: 'High-frequency transaction streaming engine and multi-cloud disaster recovery.',
+    },
+    {
+      id: 'PROP-2026-881',
+      title: 'Supply Chain Automated Dispatcher Model',
+      clientId: 'client-4',
+      clientName: 'Marcus Sterling',
+      clientCompany: 'LogiFlow Supply Corp',
+      clientAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
+      industry: 'Supply Chain & Logistics',
+      status: 'In Review',
+      total: 48500.00,
+      itemCount: 3,
+      date: 'Sep 28, 2026',
+      aiScore: '91%',
+      aiAngle: 'Cost-Saving Focus',
+      aiSummary: 'Automated fleet dispatch routing reducing fuel overhead by 18% in logistics operations.',
+    },
+    {
+      id: 'PROP-2026-879',
+      title: 'Legacy Database to Distributed Snowflake Migration',
+      clientId: 'client-1',
+      clientName: 'Sarah Jenkins',
+      clientCompany: 'Apex Retail Solutions',
+      clientAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
+      industry: 'E-Commerce & Retail',
+      status: 'Archived',
+      total: 24800.00,
+      itemCount: 2,
+      date: 'Sep 15, 2026',
+      aiScore: '89%',
+      aiAngle: 'Modernization',
+      aiSummary: 'Automated data pipelines with zero data loss validation and modern lakehouse tooling.',
+    },
+  ])
+
+  function deleteProposal(id) {
+    const idx = proposalsList.value.findIndex((p) => p.id === id)
+    if (idx > -1) {
+      proposalsList.value.splice(idx, 1)
+    }
+  }
+
+  function duplicateProposal(id) {
+    const original = proposalsList.value.find((p) => p.id === id)
+    if (original) {
+      const copy = {
+        ...original,
+        id: `PROP-2026-${Math.floor(885 + Math.random() * 100)}`,
+        title: `${original.title} (Copy)`,
+        status: 'Drafting',
+        date: 'Just now',
+      }
+      proposalsList.value.unshift(copy)
+    }
+  }
+
   function resetProposal() {
     currentStep.value = 1
     selectedClientId.value = 'client-1'
@@ -369,6 +474,7 @@ Guided by your strategic mandate—"${aiPromptContext.value}"—our solution del
     taxRate,
     isGenerating,
     sections,
+    proposalsList,
     
     // Getters
     selectedClient,
@@ -391,6 +497,8 @@ Guided by your strategic mandate—"${aiPromptContext.value}"—our solution del
     generateScope,
     generateFullProposal,
     resetProposal,
+    deleteProposal,
+    duplicateProposal,
   }
 })
 

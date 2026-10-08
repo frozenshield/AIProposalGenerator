@@ -1,6 +1,5 @@
 <script setup>
-import { ref } from 'vue'
-import { Link } from '@inertiajs/vue3'
+import { ref, computed } from 'vue'
 import {
   LayoutDashboard,
   Users,
@@ -23,6 +22,10 @@ const props = defineProps({
   currentRoute: {
     type: String,
     default: 'Proposals',
+  },
+  subRoute: {
+    type: String,
+    default: '',
   },
 })
 
@@ -55,6 +58,49 @@ const navigationItems = [
     highlightBadge: true,
   },
 ]
+
+const breadcrumbInfo = computed(() => {
+  if (props.currentRoute === 'Create Proposal' || props.subRoute === 'Create') {
+    return {
+      parent: 'Proposals',
+      parentHref: '/proposals',
+      current: 'Create Proposal',
+    }
+  }
+  if (props.currentRoute === 'Proposals') {
+    return {
+      parent: 'Workspace',
+      parentHref: '/dashboard',
+      current: 'Proposals Directory',
+    }
+  }
+  if (props.currentRoute === 'Dashboard') {
+    return {
+      parent: 'Workspace',
+      parentHref: '/dashboard',
+      current: 'Dashboard Overview',
+    }
+  }
+  if (props.currentRoute === 'Clients') {
+    return {
+      parent: 'Directory',
+      parentHref: '/dashboard',
+      current: 'Client Accounts',
+    }
+  }
+  if (props.currentRoute === 'Catalog') {
+    return {
+      parent: 'Inventory',
+      parentHref: '/dashboard',
+      current: 'Services & Pricing Catalog',
+    }
+  }
+  return {
+    parent: 'Workspace',
+    parentHref: '/dashboard',
+    current: props.currentRoute,
+  }
+})
 </script>
 
 <template>
@@ -65,15 +111,15 @@ const navigationItems = [
     >
       <!-- Brand Logo & Header -->
       <div class="h-16 flex items-center justify-between px-6 border-b border-slate-800/80 bg-slate-950/40">
-        <div class="flex items-center gap-3">
-          <div class="h-9 w-9 rounded-xl bg-gradient-to-tr from-brand-600 via-indigo-500 to-purple-400 flex items-center justify-center text-white shadow-lg shadow-brand-500/25">
+        <a href="/dashboard" class="flex items-center gap-3 group">
+          <div class="h-9 w-9 rounded-xl bg-gradient-to-tr from-brand-600 via-indigo-500 to-purple-400 flex items-center justify-center text-white shadow-lg shadow-brand-500/25 group-hover:scale-105 transition-transform">
             <Sparkles class="h-5 w-5" />
           </div>
           <div>
             <span class="font-bold text-white tracking-tight text-base leading-none block">ProposalAI</span>
             <span class="text-[10px] text-slate-400 font-medium tracking-wider uppercase">Enterprise GenUI</span>
           </div>
-        </div>
+        </a>
         <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-brand-500/20 text-brand-300 border border-brand-500/30">
           v2.4
         </span>
@@ -102,8 +148,8 @@ const navigationItems = [
             :key="item.name"
             :href="item.href"
             :class="[
-              currentRoute === item.name
-                ? 'bg-brand-600/15 text-white border-l-4 border-brand-500 font-semibold pl-3'
+              currentRoute === item.name || (item.name === 'Proposals' && currentRoute === 'Create Proposal')
+                ? 'bg-brand-600/20 text-white border-l-4 border-brand-500 font-semibold pl-3'
                 : 'text-slate-300 hover:bg-slate-800/70 hover:text-white pl-4 font-medium',
               'flex items-center justify-between py-2.5 pr-3 rounded-r-lg text-sm transition-colors duration-150 group'
             ]"
@@ -112,7 +158,7 @@ const navigationItems = [
               <component
                 :is="item.icon"
                 :class="[
-                  currentRoute === item.name
+                  currentRoute === item.name || (item.name === 'Proposals' && currentRoute === 'Create Proposal')
                     ? 'text-brand-400'
                     : 'text-slate-400 group-hover:text-slate-200',
                   'h-4 w-4 transition-colors'
@@ -215,13 +261,25 @@ const navigationItems = [
           </div>
         </div>
 
+        <!-- Mobile New Proposal button -->
+        <div class="px-4 pt-4 pb-2">
+          <a
+            href="/proposals/create"
+            @click="isMobileMenuOpen = false"
+            class="flex items-center justify-center gap-2 w-full py-2.5 px-3 rounded-lg bg-brand-600 text-white font-medium text-xs shadow-sm"
+          >
+            <PlusCircle class="h-4 w-4" />
+            <span>Create Proposal</span>
+          </a>
+        </div>
+
         <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           <a
             v-for="item in navigationItems"
             :key="item.name"
             :href="item.href"
             :class="[
-              currentRoute === item.name
+              currentRoute === item.name || (item.name === 'Proposals' && currentRoute === 'Create Proposal')
                 ? 'bg-brand-600/20 text-white border-l-4 border-brand-500 font-semibold'
                 : 'text-slate-300 hover:bg-slate-800 hover:text-white font-medium',
               'flex items-center justify-between px-3 py-2.5 rounded-r-lg text-sm'
@@ -247,20 +305,22 @@ const navigationItems = [
     <div class="flex-1 flex flex-col min-w-0 lg:pl-64 xl:pl-72">
       <!-- Top Persistent Navigation Bar -->
       <header class="sticky top-0 z-20 h-16 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-        <!-- Left: Mobile Menu Trigger + Breadcrumb -->
+        <!-- Left: Mobile Menu Trigger + Dynamic Breadcrumb -->
         <div class="flex items-center gap-3 sm:gap-4">
           <button
             type="button"
-            class="lg:hidden p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+            class="lg:hidden p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
             @click="isMobileMenuOpen = true"
           >
             <Menu class="h-5 w-5" />
           </button>
 
-          <nav class="flex items-center text-sm font-medium text-slate-500">
-            <a href="/proposals" class="hover:text-slate-900 transition-colors">Proposals</a>
-            <ChevronRight class="h-4 w-4 mx-1.5 text-slate-400" />
-            <span class="text-slate-900 font-semibold">Create Proposal</span>
+          <nav class="flex items-center text-xs sm:text-sm font-medium text-slate-500">
+            <a :href="breadcrumbInfo.parentHref" class="hover:text-slate-900 transition-colors">
+              {{ breadcrumbInfo.parent }}
+            </a>
+            <ChevronRight class="h-3.5 w-3.5 mx-1.5 text-slate-400" />
+            <span class="text-slate-900 font-semibold truncate">{{ breadcrumbInfo.current }}</span>
           </nav>
         </div>
 
@@ -302,4 +362,3 @@ const navigationItems = [
     </div>
   </div>
 </template>
-

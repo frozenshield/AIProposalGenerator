@@ -33,7 +33,7 @@ const steps = [
 </script>
 
 <template>
-  <AppLayout currentRoute="Proposals">
+  <AppLayout currentRoute="Create Proposal" subRoute="Create">
     <div class="px-4 sm:px-6 lg:px-8 py-6 space-y-6 max-w-[1700px] mx-auto">
       <!-- Page Header with Title & Live AI Indicator -->
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
