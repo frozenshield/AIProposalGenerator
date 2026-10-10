@@ -1,4 +1,4 @@
-import{c as a}from"./AppLayout-BkkCjmyJ.js";/**
+import{c as a}from"./AppLayout-Cw1XEFkB.js";/**
  * @license lucide-vue-next v1.0.0 - ISC
  *
  * This source code is licensed under the ISC license.

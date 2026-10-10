@@ -16,7 +16,10 @@ import {
   Zap,
   Settings,
   LogOut,
+  Crown,
 } from 'lucide-vue-next'
+import { useProposalStore } from '@/stores/proposalStore'
+import SubscriptionModal from '@/Components/Modals/SubscriptionModal.vue'
 
 const props = defineProps({
   currentRoute: {
@@ -27,7 +30,16 @@ const props = defineProps({
     type: String,
     default: '',
   },
+  aiModel: {
+    type: String,
+    default: null,
+  },
 })
+
+const store = useProposalStore()
+
+// Reactive variable defaulting to 'Gemini Flash-Lite' as requested
+const activeAiModel = ref(props.aiModel || store.activeAiModel || 'Gemini Flash-Lite')
 
 const isMobileMenuOpen = ref(false)
 
@@ -200,7 +212,7 @@ const breadcrumbInfo = computed(() => {
               <div class="bg-gradient-to-r from-brand-500 to-emerald-400 h-1.5 rounded-full w-[92%]"></div>
             </div>
             <p class="text-[11px] text-slate-400">
-              Gemini 1.5 Pro & Claude 3.5 synthesis ready for fast real-time drafting.
+              {{ activeAiModel }} synthesis ready for fast real-time drafting.
             </p>
           </div>
         </div>
@@ -326,7 +338,7 @@ const breadcrumbInfo = computed(() => {
 
         <!-- Right: Status Pill & Action Tools -->
         <div class="flex items-center gap-3 sm:gap-4">
-          <!-- Live AI Engine Indicator -->
+          <!-- Live AI Engine Indicator with Reactive activeAiModel -->
           <div class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200/80 text-xs font-medium text-slate-700">
             <span class="relative flex h-2 w-2">
               <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -335,9 +347,20 @@ const breadcrumbInfo = computed(() => {
             <span class="text-slate-500">Engine:</span>
             <span class="font-semibold text-slate-800 flex items-center gap-1">
               <Sparkles class="h-3 w-3 text-brand-600" />
-              Gemini 1.5 Pro
+              {{ activeAiModel }}
             </span>
           </div>
+
+          <!-- Upgrade to Pro header pill (shown for free users) -->
+          <button
+            v-if="!store.isSubscribed"
+            type="button"
+            @click="store.triggerLimitReached('Unlock unlimited AI proposals, Gemini 1.5 Pro, and domain RAG memory.')"
+            class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-500 to-brand-600 hover:from-amber-400 hover:to-brand-500 text-white text-xs font-bold shadow-xs hover:shadow-sm transition-all cursor-pointer"
+          >
+            <Crown class="h-3.5 w-3.5 text-amber-200" />
+            <span>Upgrade Pro</span>
+          </button>
 
           <!-- Notification Bell -->
           <button class="relative p-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors">
@@ -360,5 +383,15 @@ const breadcrumbInfo = computed(() => {
         <slot />
       </main>
     </div>
+
+    <!-- Global Subscription Upgrade Modal -->
+    <SubscriptionModal
+      :show="store.isSubscriptionModalOpen"
+      :limit="store.freeLimit"
+      :current-count="store.proposalsCount"
+      :error-message="store.subscriptionError"
+      @close="store.closeSubscriptionModal"
+      @upgrade="store.upgradeToPro"
+    />
   </div>
 </template>

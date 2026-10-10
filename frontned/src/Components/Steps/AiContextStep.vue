@@ -11,6 +11,8 @@ import {
   CheckCircle,
   HelpCircle,
   Zap,
+  Crown,
+  Lock,
 } from 'lucide-vue-next'
 
 const store = useProposalStore()
@@ -158,13 +160,27 @@ function applyPreset(text) {
 
       <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-brand-500/30 text-brand-200 border border-brand-500/40 mb-1.5">
-            <Zap class="h-3 w-3 text-amber-300" />
-            AI Document Engine
-          </span>
+          <div class="flex items-center gap-2 mb-1.5">
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-brand-500/30 text-brand-200 border border-brand-500/40">
+              <Zap class="h-3 w-3 text-amber-300" />
+              AI Engine: {{ store.activeAiModel }}
+            </span>
+            <span
+              v-if="store.hasReachedLimit"
+              class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-500/30 text-amber-200 border border-amber-500/40"
+            >
+              <Crown class="h-3 w-3 text-amber-300" />
+              Free Limit Reached (3/3)
+            </span>
+          </div>
           <h3 class="text-sm font-bold text-white">Generate Real-Time Sections</h3>
           <p class="text-xs text-slate-300 mt-0.5 max-w-sm">
-            Synthesizes Executive Summary, Scope of Work, and calculates final financial schedules instantly.
+            <span v-if="store.hasReachedLimit" class="text-amber-200 font-medium">
+              Free plan limit reached. Further generation is blocked until you upgrade to Pro.
+            </span>
+            <span v-else>
+              Synthesizes Executive Summary, Scope of Work, and calculates final financial schedules instantly.
+            </span>
           </p>
         </div>
 
@@ -172,14 +188,28 @@ function applyPreset(text) {
           type="button"
           @click="store.generateFullProposal"
           :disabled="store.isGenerating.full || store.isGenerating.executiveSummary || store.isGenerating.scope"
-          class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-brand-500 to-indigo-500 hover:from-brand-400 hover:to-indigo-400 text-white text-xs font-bold shadow-lg shadow-brand-500/40 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+          :class="[
+            store.hasReachedLimit
+              ? 'bg-gradient-to-r from-amber-500 to-brand-600 hover:from-amber-400 hover:to-brand-500 text-white shadow-amber-500/30 ring-2 ring-amber-400/40'
+              : 'bg-gradient-to-r from-brand-500 to-indigo-500 hover:from-brand-400 hover:to-indigo-400 text-white shadow-brand-500/40',
+            'inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-xs font-bold shadow-lg disabled:opacity-60 disabled:cursor-not-allowed transition-all cursor-pointer'
+          ]"
         >
           <Loader2
             v-if="store.isGenerating.full || store.isGenerating.executiveSummary || store.isGenerating.scope"
             class="h-4 w-4 animate-spin text-white"
           />
+          <Crown v-else-if="store.hasReachedLimit" class="h-4 w-4 text-amber-200" />
           <Sparkles v-else class="h-4 w-4 text-amber-300" />
-          <span>{{ store.isGenerating.full ? 'Synthesizing with AI...' : 'Generate Full Proposal' }}</span>
+          <span>
+            {{
+              store.isGenerating.full
+                ? 'Synthesizing with AI...'
+                : store.hasReachedLimit
+                ? 'Upgrade to Pro to Generate'
+                : 'Generate Full Proposal'
+            }}
+          </span>
         </button>
       </div>
     </div>

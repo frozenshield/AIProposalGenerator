@@ -148,6 +148,13 @@ export const useProposalStore = defineStore('proposal', () => {
   ])
 
   // AI Prompt Context & Parameters
+  const activeAiModel = ref('Gemini Flash-Lite')
+  const isSubscribed = ref(false)
+  const proposalsCount = ref(3) // Freemium tracking (defaults to 3 to trigger modal when generating)
+  const freeLimit = ref(3)
+  const isSubscriptionModalOpen = ref(false)
+  const subscriptionError = ref('You have reached the free limit of 3 proposals. Upgrade to Pro for unlimited AI generations.')
+
   const aiPromptContext = ref(
     'Pitch this as an executive cost-saving measure with an accelerated 6-month ROI. Highlight automated operational efficiencies, reduced manual labor overhead by 42%, and zero-downtime cloud migration guarantee.'
   )
@@ -157,6 +164,11 @@ export const useProposalStore = defineStore('proposal', () => {
   const proposalNumber = ref('PROP-2026-884')
   const validDays = ref(30)
   const taxRate = ref(8.5) // percentage
+
+  // Freemium limit computation
+  const hasReachedLimit = computed(() => {
+    return !isSubscribed.value && proposalsCount.value >= freeLimit.value
+  })
 
   // AI Generation Loading States
   const isGenerating = ref({
@@ -279,8 +291,29 @@ By replacing fragmented manual oversight with intelligent autonomous workflows a
     }
   }
 
-  // AI Generation Simulation with Realistic Content & Streaming Feedback
+  function triggerLimitReached(message) {
+    subscriptionError.value = message || 'You have reached the free limit of 3 proposals. Upgrade to Pro for unlimited generations.'
+    isSubscriptionModalOpen.value = true
+  }
+
+  function closeSubscriptionModal() {
+    isSubscriptionModalOpen.value = false
+  }
+
+  function upgradeToPro() {
+    isSubscribed.value = true
+    activeAiModel.value = 'Gemini 1.5 Pro'
+    isSubscriptionModalOpen.value = false
+    subscriptionError.value = ''
+  }
+
+  // AI Generation Simulation with Freemium Quota Enforcement
   async function generateExecutiveSummary() {
+    if (hasReachedLimit.value) {
+      triggerLimitReached('Free tier limit reached (3/3 proposals). Upgrade to Pro to generate executive summaries.')
+      return false
+    }
+
     isGenerating.value.executiveSummary = true
     
     // Simulate API delay
@@ -298,9 +331,15 @@ By replacing fragmented manual oversight with intelligent autonomous workflows a
 Guided by your strategic mandate—"${aiPromptContext.value}"—our solution delivers an enterprise-grade transformation ${toneNote}. Through automated orchestration and purpose-built infrastructure enhancements, ${client.company} can capture immediate operational efficiencies, curtail manual error rates by up to 85%, and solidify a measurable competitive advantage within standard fiscal milestones.`
     
     isGenerating.value.executiveSummary = false
+    return true
   }
 
   async function generateScope() {
+    if (hasReachedLimit.value) {
+      triggerLimitReached('Free tier limit reached (3/3 proposals). Upgrade to Pro to generate technical scopes.')
+      return false
+    }
+
     isGenerating.value.scope = true
 
     await new Promise((resolve) => setTimeout(resolve, 1900))
@@ -330,9 +369,15 @@ Guided by your strategic mandate—"${aiPromptContext.value}"—our solution del
     ]
 
     isGenerating.value.scope = false
+    return true
   }
 
   async function generateFullProposal() {
+    if (hasReachedLimit.value) {
+      triggerLimitReached('Free tier limit reached (3/3 proposals). Upgrade to Pro to generate full proposals.')
+      return false
+    }
+
     isGenerating.value.full = true
     isGenerating.value.executiveSummary = true
     isGenerating.value.scope = true
@@ -343,6 +388,7 @@ Guided by your strategic mandate—"${aiPromptContext.value}"—our solution del
     ])
 
     isGenerating.value.full = false
+    return true
   }
 
   // Directory of all generated proposals
@@ -471,12 +517,15 @@ Guided by your strategic mandate—"${aiPromptContext.value}"—our solution del
     proposalTitle,
     proposalNumber,
     validDays,
-    taxRate,
-    isGenerating,
-    sections,
-    proposalsList,
+    activeAiModel,
+    isSubscribed,
+    proposalsCount,
+    freeLimit,
+    isSubscriptionModalOpen,
+    subscriptionError,
     
     // Getters
+    hasReachedLimit,
     selectedClient,
     subtotal,
     totalDiscountAmount,
@@ -499,6 +548,9 @@ Guided by your strategic mandate—"${aiPromptContext.value}"—our solution del
     resetProposal,
     deleteProposal,
     duplicateProposal,
+    triggerLimitReached,
+    closeSubscriptionModal,
+    upgradeToPro,
   }
 })
 

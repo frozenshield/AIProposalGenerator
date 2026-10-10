@@ -1,12 +1,44 @@
 import { createApp, h, ref, shallowRef, markRaw } from 'vue'
-import { createInertiaApp } from '@inertiajs/vue3'
+import { createInertiaApp, router } from '@inertiajs/vue3'
 import { createPinia } from 'pinia'
 import '@/assets/main.css'
+import { useProposalStore } from '@/stores/proposalStore'
 
 // Dynamic resolver for Inertia Pages
 const pages = import.meta.glob('./Pages/**/*.vue')
 
 const appEl = document.getElementById('app')
+
+// Global Inertia event listener to catch 'limit_reached' 403 responses
+if (typeof window !== 'undefined') {
+  router.on('invalid', (event) => {
+    const response = event.detail?.response
+    if (response && response.status === 403) {
+      try {
+        const data = typeof response.data === 'string' ? JSON.parse(response.data) : response.data
+        if (data && data.error === 'limit_reached') {
+          const store = useProposalStore()
+          store.triggerLimitReached(data.message)
+        }
+      } catch (e) {
+        // Fallback for non-JSON 403
+      }
+    }
+  })
+
+  router.on('exception', (event) => {
+    const response = event.detail?.response
+    if (response && response.status === 403) {
+      try {
+        const data = typeof response.data === 'string' ? JSON.parse(response.data) : response.data
+        if (data && data.error === 'limit_reached') {
+          const store = useProposalStore()
+          store.triggerLimitReached(data.message)
+        }
+      } catch (e) {}
+    }
+  })
+}
 
 if (appEl && appEl.dataset.page) {
   // Standard Inertia.js Initialization
