@@ -22,6 +22,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'proposals_count',
+        'is_subscribed',
     ];
 
     /**
@@ -44,6 +46,16 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_subscribed' => 'boolean',
+            'proposals_count' => 'integer',
         ];
+    }
+
+    /**
+     * Check if user is eligible to create another proposal under the freemium model.
+     */
+    public function canCreateProposal(int $freeLimit = 3): bool
+    {
+        return $this->is_subscribed || $this->proposals_count < $freeLimit;
     }
 }

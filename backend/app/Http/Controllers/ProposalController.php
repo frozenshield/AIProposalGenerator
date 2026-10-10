@@ -11,6 +11,7 @@ use App\Models\CatalogItem;
 use App\Models\Client;
 use App\Models\Proposal;
 use App\Services\ProposalGenerationService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -60,9 +61,37 @@ class ProposalController extends Controller
 
     /**
      * Store a newly created proposal, invoke AI generation, and redirect to show route.
+     * Enforces freemium quota: non-subscribed users are capped at 3 proposals.
      */
-    public function store(StoreProposalRequest $request): RedirectResponse
+    public function store(StoreProposalRequest $request): JsonResponse|RedirectResponse
     {
+        $user = $request->user();
+
+        // 1. Freemium quota check: non-subscribed users are limited to 3 proposals
+        if ($user && ! $user->is_subscribed && $user->proposals_count >= 3) {
+            return response()->json([
+                'error' => 'limit_reached',
+                'message' => 'Free tier limit reached. You can only create up to 3 proposals on the free plan.',
+                'proposals_count' => $user->proposals_count,
+                'limit' => 3,
+                'is_subscribed' => false,
+            ], 403);
+        }
+
+        // Demo / Guest session fallback if running without mandatory authentication
+        if (! $user) {
+            $sessionCount = (int) $request->session()->get('proposals_count', 0);
+            if ($sessionCount >= 3) {
+                return response()->json([
+                    'error' => 'limit_reached',
+                    'message' => 'Free tier limit reached. You have created 3 proposals. Please upgrade to Pro.',
+                    'proposals_count' => $sessionCount,
+                    'limit' => 3,
+                    'is_subscribed' => false,
+                ], 403);
+            }
+        }
+
         $validated = $request->validated();
 
         $proposalNumber = 'PROP-' . date('Y') . '-' . str_pad((string) (Proposal::max('id') + 1), 3, '0', STR_PAD_LEFT);
@@ -81,8 +110,24 @@ class ProposalController extends Controller
             'notes' => $validated['notes'] ?? null,
         ]);
 
+        // Increment the user or session proposals count
+        if ($user) {
+            $user->increment('proposals_count');
+        } else {
+            $request->session()->increment('proposals_count');
+        }
+
         try {
             $this->generationService->generatePitch($proposal, $validated);
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Proposal and AI pitch generated successfully.',
+                    'proposal' => $proposal->load(['client', 'sections', 'lineItems']),
+                    'redirect' => route('proposals.show', $proposal),
+                ], 201);
+            }
 
             return redirect()
                 ->route('proposals.show', $proposal)
@@ -92,6 +137,15 @@ class ProposalController extends Controller
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'status' => 'partial_success',
+                    'message' => 'Proposal created, but AI generation encountered an error: ' . $e->getMessage(),
+                    'proposal' => $proposal,
+                    'redirect' => route('proposals.show', $proposal),
+                ], 200);
+            }
 
             return redirect()
                 ->route('proposals.show', $proposal)
