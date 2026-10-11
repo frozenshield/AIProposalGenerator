@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue'
+import { usePage, router } from '@inertiajs/vue3'
 import {
   LayoutDashboard,
   Users,
@@ -42,6 +43,25 @@ const store = useProposalStore()
 const activeAiModel = ref(props.aiModel || store.activeAiModel || 'Gemini Flash-Lite')
 
 const isMobileMenuOpen = ref(false)
+
+const page = usePage()
+const authUser = computed(() => page.props.auth?.user || null)
+const isAuthenticated = computed(() => !!authUser.value)
+
+const userInitials = computed(() => {
+  if (!authUser.value?.name) return 'U'
+  return authUser.value.name
+    .split(' ')
+    .filter(Boolean)
+    .map(n => n[0])
+    .join('')
+    .toUpperCase()
+    .substring(0, 2)
+})
+
+const handleLogout = () => {
+  router.post('/logout')
+}
 
 const navigationItems = [
   {
@@ -219,25 +239,45 @@ const breadcrumbInfo = computed(() => {
       </div>
 
       <!-- User Profile & Org Footer -->
-      <div class="p-4 border-t border-slate-800/80 bg-slate-950/50 flex items-center justify-between">
-        <div class="flex items-center gap-3 min-w-0">
-          <div class="h-9 w-9 rounded-full ring-2 ring-brand-500/40 overflow-hidden flex-shrink-0 bg-slate-800">
-            <img
-              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
-              alt="User Avatar"
-              class="h-full w-full object-cover"
-            />
+      <div class="p-4 border-t border-slate-800/80 bg-slate-950/50">
+        <template v-if="isAuthenticated">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="h-9 w-9 rounded-full ring-2 ring-brand-500/40 overflow-hidden flex-shrink-0 bg-slate-800 flex items-center justify-center font-bold text-xs text-brand-300">
+                <span>{{ userInitials }}</span>
+              </div>
+              <div class="min-w-0">
+                <p class="text-sm font-semibold text-white truncate leading-snug">{{ authUser.name }}</p>
+                <p class="text-xs text-slate-400 truncate">{{ authUser.email }}</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-1 text-slate-400">
+              <button
+                @click="handleLogout"
+                class="p-1.5 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                title="Log Out"
+              >
+                <LogOut class="h-4 w-4" />
+              </button>
+            </div>
           </div>
-          <div class="min-w-0">
-            <p class="text-sm font-semibold text-white truncate leading-snug">Elena Vance</p>
-            <p class="text-xs text-slate-400 truncate">Senior Deal Lead</p>
+        </template>
+        <template v-else>
+          <div class="flex flex-col gap-2">
+            <a
+              href="/login"
+              class="w-full text-center py-2 px-3 rounded-lg bg-brand-600 hover:bg-brand-500 text-white font-medium text-xs transition-colors"
+            >
+              Sign In
+            </a>
+            <a
+              href="/register"
+              class="w-full text-center py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs transition-colors"
+            >
+              Create Account
+            </a>
           </div>
-        </div>
-        <div class="flex items-center gap-1 text-slate-400">
-          <button class="p-1.5 hover:text-white hover:bg-slate-800 rounded-lg transition-colors" title="Settings">
-            <Settings class="h-4 w-4" />
-          </button>
-        </div>
+        </template>
       </div>
     </aside>
 
@@ -310,6 +350,36 @@ const breadcrumbInfo = computed(() => {
             </span>
           </a>
         </nav>
+
+        <!-- Mobile Drawer Auth Footer -->
+        <div class="p-4 border-t border-slate-800 bg-slate-950/70 mt-auto">
+          <template v-if="isAuthenticated">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <div class="h-8 w-8 rounded-full bg-brand-600/30 text-brand-300 ring-1 ring-brand-500/30 flex items-center justify-center font-bold text-xs">
+                  {{ userInitials }}
+                </div>
+                <div class="min-w-0">
+                  <p class="text-xs font-semibold text-white truncate">{{ authUser.name }}</p>
+                  <p class="text-[11px] text-slate-400 truncate">{{ authUser.email }}</p>
+                </div>
+              </div>
+              <button
+                @click="handleLogout"
+                class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                title="Log Out"
+              >
+                <LogOut class="h-4 w-4" />
+              </button>
+            </div>
+          </template>
+          <template v-else>
+            <div class="flex gap-2">
+              <a href="/login" class="flex-1 text-center py-2 rounded-lg bg-brand-600 text-white text-xs font-medium">Sign In</a>
+              <a href="/register" class="flex-1 text-center py-2 rounded-lg bg-slate-800 text-slate-300 text-xs font-medium">Register</a>
+            </div>
+          </template>
+        </div>
       </div>
     </div>
 
