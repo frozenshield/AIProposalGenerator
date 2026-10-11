@@ -247,13 +247,18 @@ const breadcrumbInfo = computed(() => {
                 <Zap class="h-3.5 w-3.5 text-amber-400" />
                 Prompt Quota
               </span>
-              <span class="text-[11px] text-brand-400 font-semibold">92% Available</span>
+              <span class="text-[11px] font-semibold" :class="isSubscribed ? 'text-amber-400 font-bold' : 'text-brand-400'">
+                {{ isSubscribed ? 'Unlimited Pro' : '92% Available' }}
+              </span>
             </div>
             <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-              <div class="bg-gradient-to-r from-brand-500 to-emerald-400 h-1.5 rounded-full w-[92%]"></div>
+              <div
+                :class="isSubscribed ? 'bg-gradient-to-r from-amber-400 to-amber-500 w-full' : 'bg-gradient-to-r from-brand-500 to-emerald-400 w-[92%]'"
+                class="h-1.5 rounded-full"
+              ></div>
             </div>
             <p class="text-[11px] text-slate-400">
-              {{ activeAiModel }} synthesis ready for fast real-time drafting.
+              {{ isSubscribed ? 'Gemini 1.5 Pro synthesis unlocked with pgvector RAG memory.' : activeAiModel + ' synthesis ready for fast real-time drafting.' }}
             </p>
           </div>
         </div>
@@ -476,6 +481,15 @@ const breadcrumbInfo = computed(() => {
             <Crown class="h-3.5 w-3.5 text-amber-200" />
             <span>Upgrade Pro</span>
           </button>
+
+          <!-- Verified Pro Header Badge -->
+          <div
+            v-else
+            class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 text-xs font-black shadow-xs tracking-wider ring-1 ring-amber-300"
+          >
+            <Crown class="h-3.5 w-3.5" />
+            <span>PRO ACTIVE</span>
+          </div>
 
           <!-- Notification Bell -->
           <button class="relative p-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors">

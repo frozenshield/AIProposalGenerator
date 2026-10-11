@@ -1,5 +1,9 @@
 <script setup>
+import { onMounted, ref, computed } from 'vue'
 import AppLayout from '@/Layouts/AppLayout.vue'
+import { useProposalStore } from '@/stores/proposalStore'
+import { useAuthStore } from '@/stores/authStore'
+import { useToast } from '@/composables/useToast'
 import {
   FileText,
   Users,
@@ -8,7 +12,62 @@ import {
   Sparkles,
   ArrowUpRight,
   PlusCircle,
+  Crown,
+  CheckCircle2,
+  Zap,
+  ShieldCheck,
+  X,
 } from 'lucide-vue-next'
+
+const props = defineProps({
+  metrics: {
+    type: Object,
+    default: () => ({}),
+  },
+  recentProposals: {
+    type: Array,
+    default: () => [],
+  },
+  paymentSuccess: {
+    type: Boolean,
+    default: false,
+  },
+})
+
+const store = useProposalStore()
+const authStore = useAuthStore()
+const toast = useToast()
+
+const showSuccessBanner = ref(false)
+const showCelebrationModal = ref(false)
+
+const isProUser = computed(() => {
+  return Boolean(authStore.user?.is_subscribed || authStore.user?.subscription_tier === 'pro' || store.isSubscribed)
+})
+
+onMounted(async () => {
+  // Check if user just redirected back from PayMongo with ?payment=success
+  const urlParams = new URLSearchParams(window.location.search)
+  const isPaid = urlParams.get('payment') === 'success' || props.paymentSuccess
+
+  if (isPaid) {
+    showSuccessBanner.value = true
+    showCelebrationModal.value = true
+
+    // Upgrade Pinia store states
+    store.isSubscribed = true
+    store.activeAiModel = 'Gemini 1.5 Pro'
+
+    // Refresh auth user from server to ensure database has updated
+    await authStore.checkAuth()
+
+    toast.success('Congratulations! Your Pro membership is now live with unlimited AI generations.', 'Upgraded to PRO!')
+
+    // Clean URL without refreshing page
+    const cleanUrl = window.location.pathname
+    window.history.replaceState({}, document.title, cleanUrl)
+  }
+})
 
 const stats = [
   { name: 'Active Proposals', value: '14', change: '+18% this month', icon: FileText },
@@ -17,16 +76,71 @@ const stats = [
   { name: 'Avg. AI Turnaround', value: '3.2 mins', change: '85% faster', icon: Sparkles },
 ]
 
-const recentProposals = [
-  { id: 'PROP-2026-884', client: 'Apex Retail Solutions Philippines', value: '₱376,540', status: 'Drafting', date: 'Just now' },
-  { id: 'PROP-2026-883', client: 'OmniHealth Tech Asia', value: '₱642,000', status: 'Sent', date: '2 days ago' },
-  { id: 'PROP-2026-882', client: 'FinVanguard Global Capital', value: '₱1,120,000', status: 'Approved', date: 'Oct 04' },
-]
+const recentProposalsList = computed(() => {
+  if (props.recentProposals && props.recentProposals.length) {
+    return props.recentProposals.map(p => ({
+      id: p.proposal_number || `PROP-${p.id}`,
+      client: p.client?.company || p.client?.name || 'Enterprise Client',
+      value: `₱${Number(p.grand_total || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
+      status: p.status || 'Draft',
+      date: new Date(p.created_at || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    }))
+  }
+
+  return [
+    { id: 'PROP-2026-884', client: 'Apex Retail Solutions Philippines', value: '₱376,540', status: 'Drafting', date: 'Just now' },
+    { id: 'PROP-2026-883', client: 'OmniHealth Tech Asia', value: '₱642,000', status: 'Sent', date: '2 days ago' },
+    { id: 'PROP-2026-882', client: 'FinVanguard Global Capital', value: '₱1,120,000', status: 'Approved', date: 'Oct 04' },
+  ]
+})
 </script>
 
 <template>
   <AppLayout currentRoute="Dashboard">
     <div class="px-4 sm:px-6 lg:px-8 py-6 space-y-6 max-w-[1700px] mx-auto">
+      
+      <!-- Pro Upgrade Celebration Alert Banner -->
+      <div
+        v-if="showSuccessBanner || isProUser"
+        class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-500/15 via-brand-500/10 to-emerald-500/10 border border-amber-500/30 p-5 shadow-sm"
+      >
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="flex items-start sm:items-center gap-3.5">
+            <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-slate-950 font-black shadow-md flex-shrink-0 ring-2 ring-amber-300/40">
+              <Crown class="h-5 w-5" />
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="text-sm sm:text-base font-bold text-slate-900">
+                  ProposalAI Pro Active
+                </h3>
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 shadow-xs">
+                  PRO MEMBER
+                </span>
+              </div>
+              <p class="text-xs text-slate-600 mt-0.5">
+                Enjoy unlimited AI drafting, Gemini 1.5 Pro high-reasoning synthesis, and pgvector RAG memory.
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <div class="hidden md:flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200">
+              <ShieldCheck class="h-4 w-4 text-emerald-600" />
+              <span>Full Perks Unlocked</span>
+            </div>
+            <a
+              href="/proposals/create"
+              class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-xs transition-colors"
+            >
+              <Sparkles class="h-3.5 w-3.5 text-amber-300" />
+              <span>Create Pro Proposal</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dashboard Header -->
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Executive Dashboard</h1>
@@ -67,7 +181,7 @@ const recentProposals = [
         </div>
         <div class="divide-y divide-slate-100">
           <div
-            v-for="p in recentProposals"
+            v-for="p in recentProposalsList"
             :key="p.id"
             class="py-3 flex items-center justify-between text-xs"
           >
@@ -85,6 +199,54 @@ const recentProposals = [
         </div>
       </div>
     </div>
+
+    <!-- Celebration Modal (Appears upon redirect with ?payment=success) -->
+    <Teleport to="body">
+      <div
+        v-if="showCelebrationModal"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs"
+      >
+        <div class="relative w-full max-w-md bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-100 text-center space-y-6">
+          <div class="mx-auto h-16 w-16 rounded-2xl bg-gradient-to-tr from-amber-400 to-amber-600 flex items-center justify-center text-slate-950 shadow-lg ring-4 ring-amber-100">
+            <Crown class="h-8 w-8" />
+          </div>
+
+          <div class="space-y-2">
+            <h2 class="text-xl font-extrabold text-slate-900">Welcome to ProposalAI Pro!</h2>
+            <p class="text-xs text-slate-500">
+              Your payment has been confirmed by PayMongo. All Pro perks and capabilities have been unlocked on your account.
+            </p>
+          </div>
+
+          <!-- Unlocked Perks List -->
+          <div class="p-4 rounded-2xl bg-slate-50 border border-slate-100 text-left space-y-2.5 text-xs text-slate-700">
+            <div class="flex items-center gap-2 font-medium">
+              <CheckCircle2 class="h-4 w-4 text-emerald-600 flex-shrink-0" />
+              <span>Unlimited automated AI proposal drafting</span>
+            </div>
+            <div class="flex items-center gap-2 font-medium">
+              <CheckCircle2 class="h-4 w-4 text-emerald-600 flex-shrink-0" />
+              <span>Gemini 1.5 Pro high-reasoning intelligence</span>
+            </div>
+            <div class="flex items-center gap-2 font-medium">
+              <CheckCircle2 class="h-4 w-4 text-emerald-600 flex-shrink-0" />
+              <span>pgvector semantic pitch memory retrieval</span>
+            </div>
+            <div class="flex items-center gap-2 font-medium">
+              <CheckCircle2 class="h-4 w-4 text-emerald-600 flex-shrink-0" />
+              <span>Verified Pro golden badge on corporate profile</span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            @click="showCelebrationModal = false"
+            class="w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-md transition-colors cursor-pointer"
+          >
+            Start Crafting Proposals
+          </button>
+        </div>
+      </div>
+    </Teleport>
   </AppLayout>
 </template>
-
