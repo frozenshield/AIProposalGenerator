@@ -75,32 +75,39 @@ class PayMongoWebhookController extends Controller
             $proposalId = $metadata['proposal_id'] ?? null;
             $referenceNumber = $attributes['reference_number'] ?? null;
 
-            // =========================================================================
-            // DATABASE LOGIC PLACEHOLDER: MARK PROPOSAL AS PAID / UNLOCK USER CREDITS
-            // =========================================================================
-            // Example:
-            // 1. If paying for a specific AI Proposal:
-            //    if ($proposalId) {
-            //        $proposal = Proposal::find($proposalId);
-            //        if ($proposal) {
-            //            $proposal->update([
-            //                'status' => 'won', // or 'paid'
-            //                'paid_at' => now(),
-            //            ]);
-            //        }
-            //    }
-            //
-            // 2. If upgrading user subscription or unlocking AI proposal credits:
-            //    if ($userId) {
-            //        $user = User::find($userId);
-            //        if ($user) {
-            //            $user->update([
-            //                'is_subscribed' => true,
-            //                // 'credits' => $user->credits + 100, // or unlock quota
-            //            ]);
-            //        }
-            //    }
-            // =========================================================================
+            // Extract userId from reference_number if metadata didn't include it (e.g. PROP-SUB-1-179172...)
+            if (!$userId && $referenceNumber && preg_match('/PROP-SUB-(\d+)-/', (string) $referenceNumber, $matches)) {
+                $userId = $matches[1];
+            }
+
+            // Upgrade User to Pro in database
+            if ($userId) {
+                $user = User::find($userId);
+                if ($user) {
+                    $user->update([
+                        'is_subscribed' => true,
+                        'subscription_tier' => 'pro',
+                        'subscribed_at' => now(),
+                    ]);
+
+                    Log::info("User ID {$userId} ({$user->email}) successfully upgraded to PRO tier.", [
+                        'reference_number' => $referenceNumber,
+                        'tier' => 'pro',
+                    ]);
+                } else {
+                    Log::warning("PayMongo webhook user ID {$userId} not found in database.");
+                }
+            }
+
+            // If a specific proposal was being purchased, update its status
+            if ($proposalId) {
+                $proposal = Proposal::find($proposalId);
+                if ($proposal) {
+                    $proposal->update([
+                        'status' => Proposal::STATUS_WON,
+                    ]);
+                }
+            }
 
             Log::info('PayMongo checkout session paid event processed.', [
                 'user_id' => $userId,

@@ -45,6 +45,7 @@ class HandleInertiaRequests extends Middleware
                     'name' => $request->user()->name,
                     'email' => $request->user()->email,
                     'is_subscribed' => (bool) ($request->user()->is_subscribed ?? false),
+                    'subscription_tier' => $request->user()->subscription_tier ?? ($request->user()->is_subscribed ? 'pro' : 'free'),
                     'proposals_count' => (int) ($request->user()->proposals_count ?? 0),
                 ] : null,
             ],

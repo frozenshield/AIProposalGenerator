@@ -25,6 +25,8 @@ class User extends Authenticatable
         'password',
         'proposals_count',
         'is_subscribed',
+        'subscription_tier',
+        'subscribed_at',
     ];
 
     /**
@@ -48,8 +50,18 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_subscribed' => 'boolean',
+            'subscription_tier' => 'string',
+            'subscribed_at' => 'datetime',
             'proposals_count' => 'integer',
         ];
+    }
+
+    /**
+     * Check if the user has an active Pro subscription with perks unlocked.
+     */
+    public function isPro(): bool
+    {
+        return (bool) ($this->is_subscribed || $this->subscription_tier === 'pro');
     }
 
     /**

@@ -44,9 +44,14 @@ class PayMongoWebhookTest extends TestCase
         $response->assertJson(['error' => 'Signature verification failed.']);
     }
 
-    public function test_accepts_and_verifies_valid_signature(): void
+    public function test_accepts_and_verifies_valid_signature_and_upgrades_user_to_pro(): void
     {
         config(['services.paymongo.webhook_secret' => 'whsec_test_secret_key_12345']);
+
+        $user = \App\Models\User::factory()->create([
+            'is_subscribed' => false,
+            'subscription_tier' => 'free',
+        ]);
 
         $payload = json_encode([
             'data' => [
@@ -55,9 +60,9 @@ class PayMongoWebhookTest extends TestCase
                     'type' => 'checkout_session.payment.paid',
                     'data' => [
                         'attributes' => [
-                            'reference_number' => 'PROP-SUB-TEST-1',
+                            'reference_number' => 'PROP-SUB-' . $user->id . '-' . time(),
                             'metadata' => [
-                                'user_id' => 1,
+                                'user_id' => $user->id,
                             ],
                         ],
                     ],
@@ -88,5 +93,10 @@ class PayMongoWebhookTest extends TestCase
             'status' => 'success',
             'message' => 'Webhook received and processed.',
         ]);
+
+        // Assert user record in database is upgraded to Pro
+        $this->assertTrue($user->fresh()->is_subscribed);
+        $this->assertEquals('pro', $user->fresh()->subscription_tier);
+        $this->assertNotNull($user->fresh()->subscribed_at);
     }
 }

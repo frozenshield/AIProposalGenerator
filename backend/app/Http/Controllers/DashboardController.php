@@ -34,6 +34,19 @@ class DashboardController extends Controller
             ? $user->proposals()->with('client')->latest()->take(5)->get()
             : Proposal::with('client')->latest()->take(5)->get();
 
+        $paymentSuccess = false;
+        if ($request->query('payment') === 'success') {
+            $paymentSuccess = true;
+            if ($user && (!$user->is_subscribed || $user->subscription_tier !== 'pro')) {
+                $user->update([
+                    'is_subscribed' => true,
+                    'subscription_tier' => 'pro',
+                    'subscribed_at' => now(),
+                ]);
+                $user->refresh();
+            }
+        }
+
         return Inertia::render('Dashboard', [
             'metrics' => [
                 'activeProposals' => $activeProposalsCount,
@@ -41,6 +54,7 @@ class DashboardController extends Controller
                 'clientAccounts' => $clientAccountsCount,
             ],
             'recentProposals' => $recentProposals,
+            'paymentSuccess' => $paymentSuccess,
         ]);
     }
 }

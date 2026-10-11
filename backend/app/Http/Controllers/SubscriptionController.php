@@ -67,8 +67,16 @@ class SubscriptionController extends Controller
                                 'plan' => 'pro',
                                 'cycle' => $cycle,
                             ],
-                            'success_url' => url('/dashboard?payment=success&ref=' . $referenceNumber),
-                            'cancel_url' => url('/dashboard?payment=cancelled'),
+                            'success_url' => (function() use ($request, $referenceNumber) {
+                                $origin = $request->header('origin') ?: $request->header('referer');
+                                $base = $origin ? preg_replace('#(/dashboard|/proposals|/api|/catalog|/clients).*$#', '', $origin) : 'http://localhost:5173';
+                                return rtrim($base, '/') . '/dashboard?payment=success&ref=' . $referenceNumber;
+                            })(),
+                            'cancel_url' => (function() use ($request) {
+                                $origin = $request->header('origin') ?: $request->header('referer');
+                                $base = $origin ? preg_replace('#(/dashboard|/proposals|/api|/catalog|/clients).*$#', '', $origin) : 'http://localhost:5173';
+                                return rtrim($base, '/') . '/dashboard?payment=cancelled';
+                            })(),
                         ],
                     ],
                 ]);
