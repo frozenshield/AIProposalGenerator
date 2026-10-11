@@ -88,3 +88,4 @@ const colorMap = {
     </TransitionGroup>
   </div>
 </template>
+
