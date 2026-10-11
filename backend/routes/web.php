@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\PayMongoWebhookController;
 use App\Http\Controllers\ProposalController;
 use App\Http\Controllers\ReferenceController;
 use App\Http\Controllers\SubscriptionController;
@@ -22,8 +23,11 @@ Route::get('/api/reference-options', [ReferenceController::class, 'index'])->nam
 Route::get('/api/user', [AuthController::class, 'user'])->name('api.user');
 
 // PayMongo Webhook Endpoint (Public, CSRF Exempt)
-Route::post('/webhooks/paymongo', [WebhookController::class, 'paymongo'])->name('webhooks.paymongo');
-Route::post('/api/webhooks/paymongo', [WebhookController::class, 'paymongo']);
+Route::post('/webhooks/paymongo', [PayMongoWebhookController::class, 'handle'])->name('webhooks.paymongo');
+
+// PayMongo Checkout Session (Public / Authenticated)
+Route::post('/subscription/checkout', [SubscriptionController::class, 'checkout'])->name('subscription.checkout');
+Route::post('/api/subscription/checkout', [SubscriptionController::class, 'checkout']);
 
 // Guest Authentication Routes
 Route::middleware('guest')->group(function () {
@@ -40,10 +44,6 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::post('/api/logout', [AuthController::class, 'logout']);
-
-    // PayMongo Checkout Session
-    Route::post('/subscription/checkout', [SubscriptionController::class, 'checkout'])->name('subscription.checkout');
-    Route::post('/api/subscription/checkout', [SubscriptionController::class, 'checkout']);
 
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
