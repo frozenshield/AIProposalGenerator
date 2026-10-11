@@ -20,7 +20,9 @@ import {
   Crown,
 } from 'lucide-vue-next'
 import { useProposalStore } from '@/stores/proposalStore'
+import { useAuthStore } from '@/stores/authStore'
 import SubscriptionModal from '@/Components/Modals/SubscriptionModal.vue'
+import ToastContainer from '@/Components/UI/ToastContainer.vue'
 
 const props = defineProps({
   currentRoute: {
@@ -38,6 +40,7 @@ const props = defineProps({
 })
 
 const store = useProposalStore()
+const authStore = useAuthStore()
 
 // Reactive variable defaulting to 'Gemini Flash-Lite' as requested
 const activeAiModel = ref(props.aiModel || store.activeAiModel || 'Gemini Flash-Lite')
@@ -47,9 +50,9 @@ const isMobileMenuOpen = ref(false)
 const page = usePage()
 const authUser = computed(() => {
   try {
-    return page?.props?.auth?.user || null
+    return page?.props?.auth?.user || authStore.user || null
   } catch {
-    return null
+    return authStore.user || null
   }
 })
 const isAuthenticated = computed(() => !!authUser.value)
@@ -65,8 +68,11 @@ const userInitials = computed(() => {
     .substring(0, 2)
 })
 
-const handleLogout = () => {
-  router.post('/logout')
+const handleLogout = async () => {
+  try {
+    await authStore.logout()
+  } catch (e) {}
+  window.location.href = '/login'
 }
 
 const navigationItems = [
@@ -469,5 +475,8 @@ const breadcrumbInfo = computed(() => {
       @close="store.closeSubscriptionModal"
       @upgrade="store.upgradeToPro"
     />
+
+    <!-- Global Toast Notifications Container -->
+    <ToastContainer />
   </div>
 </template>

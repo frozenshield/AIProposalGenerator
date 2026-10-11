@@ -30,7 +30,7 @@ const store = useProposalStore()
           class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs space-y-4 hover:border-brand-300 transition-all"
         >
           <div class="flex items-center gap-3">
-            <img :src="client.avatar" :alt="client.name" class="h-12 w-12 rounded-xl object-cover ring-2 ring-slate-100" />
+            <img :src="client.avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80'" :alt="client.name || 'Client'" class="h-12 w-12 rounded-xl object-cover ring-2 ring-slate-100" />
             <div class="min-w-0">
               <h3 class="font-bold text-slate-900 text-sm truncate">{{ client.name }}</h3>
               <p class="text-xs text-slate-500 truncate">{{ client.role }}</p>

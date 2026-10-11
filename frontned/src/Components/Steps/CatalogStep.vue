@@ -18,12 +18,12 @@ const store = useProposalStore()
 const isCatalogModalOpen = ref(false)
 
 function formatCurrency(val) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val)
+  return store.formatCurrency(val)
 }
 
 function calculateLineTotal(item) {
-  const base = item.unitPrice * item.quantity
-  const discountVal = base * ((item.discount || 0) / 100)
+  const base = Number(item.unitPrice) * Number(item.quantity)
+  const discountVal = base * ((Number(item.discount) || 0) / 100)
   return Math.max(0, base - discountVal)
 }
 </script>
@@ -158,14 +158,14 @@ function calculateLineTotal(item) {
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-slate-100 text-xs">
             <!-- Unit Price -->
             <div>
-              <label class="block text-[11px] font-medium text-slate-500 mb-1">Unit Price ($)</label>
+              <label class="block text-[11px] font-medium text-slate-500 mb-1">Unit Price (₱)</label>
               <div class="relative">
                 <input
                   type="number"
                   min="0"
                   step="100"
                   :value="item.unitPrice"
-                  @input="store.updateItem(idx, 'unitPrice', Number($event.target.value))"
+                  @input="store.updateItem(item.id, 'unitPrice', Number($event.target.value))"
                   class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:bg-white focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-hidden"
                 />
               </div>
@@ -180,7 +180,7 @@ function calculateLineTotal(item) {
                   min="1"
                   max="100"
                   :value="item.quantity"
-                  @input="store.updateItem(idx, 'quantity', Math.max(1, Number($event.target.value)))"
+                  @input="store.updateItem(item.id, 'quantity', Math.max(1, Number($event.target.value)))"
                   class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:bg-white focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-hidden"
                 />
               </div>
@@ -198,7 +198,7 @@ function calculateLineTotal(item) {
                   min="0"
                   max="100"
                   :value="item.discount"
-                  @input="store.updateItem(idx, 'discount', Math.min(100, Math.max(0, Number($event.target.value))))"
+                  @input="store.updateItem(item.id, 'discount', Math.min(100, Math.max(0, Number($event.target.value))))"
                   class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:bg-white focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-hidden"
                 />
               </div>

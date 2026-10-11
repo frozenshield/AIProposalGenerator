@@ -52,10 +52,10 @@ ${store.sections.executiveSummary}
 ${store.sections.scope.map((s) => `### ${s.title}\n${s.description}\nTimeline: ${s.duration} | Deliverable: ${s.deliverable}`).join('\n\n')}
 
 ## 3. Pricing
-Subtotal: $${store.subtotal.toFixed(2)}
-Discount: -$${store.totalDiscountAmount.toFixed(2)}
-Tax: $${store.taxAmount.toFixed(2)}
-Grand Total: $${store.grandTotal.toFixed(2)}
+Subtotal: ${store.formatCurrency(store.subtotal)}
+Discount: -${store.formatCurrency(store.totalDiscountAmount)}
+Tax: ${store.formatCurrency(store.taxAmount)}
+Grand Total: ${store.formatCurrency(store.grandTotal)}
 `
   navigator.clipboard.writeText(text).then(() => {
     copied.value = true

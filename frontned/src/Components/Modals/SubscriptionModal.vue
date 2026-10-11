@@ -152,7 +152,7 @@ function handleClose() {
                     'px-3 py-1 rounded-lg text-xs border transition-all'
                   ]"
                 >
-                  Monthly ($49/mo)
+                  Monthly (₱2,499/mo)
                 </button>
                 <button
                   type="button"
@@ -164,7 +164,7 @@ function handleClose() {
                     'px-3 py-1 rounded-lg text-xs border transition-all relative'
                   ]"
                 >
-                  <span>Annually ($39/mo)</span>
+                  <span>Annually (₱1,999/mo)</span>
                   <span class="ml-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.2 rounded-full border border-emerald-200">Save 20%</span>
                 </button>
               </div>

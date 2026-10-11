@@ -5,12 +5,12 @@ import { DollarSign, Tag, ShieldAlert, Sparkles, TrendingDown } from 'lucide-vue
 const store = useProposalStore()
 
 function formatCurrency(val) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val || 0)
+  return store.formatCurrency(val)
 }
 
 function calculateItemNet(item) {
-  const base = item.unitPrice * item.quantity
-  const discountVal = base * ((item.discount || 0) / 100)
+  const base = Number(item.unitPrice) * Number(item.quantity)
+  const discountVal = base * ((Number(item.discount) || 0) / 100)
   return Math.max(0, base - discountVal)
 }
 </script>

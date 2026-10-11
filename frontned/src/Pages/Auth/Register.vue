@@ -1,18 +1,34 @@
 <script setup>
-import { useForm } from '@inertiajs/vue3'
-import { Sparkles, User, Mail, Lock, ArrowRight, ShieldCheck } from 'lucide-vue-next'
+import { ref } from 'vue'
+import { useAuthStore } from '@/stores/authStore'
+import ToastContainer from '@/Components/UI/ToastContainer.vue'
+import {
+  Sparkles,
+  User,
+  Mail,
+  Lock,
+  ArrowRight,
+  ShieldCheck,
+  Loader2,
+  AlertCircle,
+} from 'lucide-vue-next'
 
-const form = useForm({
+const authStore = useAuthStore()
+
+const form = ref({
   name: '',
   email: '',
   password: '',
   password_confirmation: '',
 })
 
-function submit() {
-  form.post('/register', {
-    onFinish: () => form.reset('password', 'password_confirmation'),
-  })
+async function submit() {
+  const result = await authStore.register(form.value)
+  if (result.success) {
+    setTimeout(() => {
+      window.location.href = result.redirect || '/dashboard'
+    }, 600)
+  }
 }
 </script>
 
@@ -28,6 +44,15 @@ function submit() {
 
     <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4">
       <div class="bg-slate-900 border border-slate-800 rounded-2xl py-8 px-6 sm:px-10 shadow-2xl space-y-6">
+        <!-- Error Banner if failed -->
+        <div
+          v-if="authStore.authError"
+          class="flex items-center gap-2.5 p-3 rounded-xl bg-rose-950/80 border border-rose-500/40 text-rose-200 text-xs"
+        >
+          <AlertCircle class="h-4 w-4 flex-shrink-0 text-rose-400" />
+          <span>{{ authStore.authError }}</span>
+        </div>
+
         <form @submit.prevent="submit" class="space-y-4">
           <!-- Full Name -->
           <div class="space-y-1.5">
@@ -42,10 +67,9 @@ function submit() {
                 required
                 autocomplete="name"
                 class="block w-full pl-10 pr-3.5 py-2.5 bg-slate-950/80 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-hidden focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
-                placeholder="Sarah Jenkins"
+                placeholder="Juan Dela Cruz"
               />
             </div>
-            <p v-if="form.errors.name" class="text-xs text-rose-400 font-medium">{{ form.errors.name }}</p>
           </div>
 
           <!-- Email Field -->
@@ -61,10 +85,9 @@ function submit() {
                 required
                 autocomplete="username"
                 class="block w-full pl-10 pr-3.5 py-2.5 bg-slate-950/80 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-hidden focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
-                placeholder="s.jenkins@company.com"
+                placeholder="juan@company.ph"
               />
             </div>
-            <p v-if="form.errors.email" class="text-xs text-rose-400 font-medium">{{ form.errors.email }}</p>
           </div>
 
           <!-- Password Field -->
@@ -83,7 +106,6 @@ function submit() {
                 placeholder="••••••••••••"
               />
             </div>
-            <p v-if="form.errors.password" class="text-xs text-rose-400 font-medium">{{ form.errors.password }}</p>
           </div>
 
           <!-- Confirm Password Field -->
@@ -107,11 +129,14 @@ function submit() {
           <!-- Submit Button -->
           <button
             type="submit"
-            :disabled="form.processing"
+            :disabled="authStore.isLoading"
             class="w-full mt-2 flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-brand-600 hover:bg-brand-500 disabled:opacity-50 text-white font-semibold text-sm transition-all shadow-lg shadow-brand-500/25 cursor-pointer"
           >
-            <span>Create Account & Launch Workspace</span>
-            <ArrowRight class="h-4 w-4" />
+            <Loader2 v-if="authStore.isLoading" class="h-4 w-4 animate-spin" />
+            <template v-else>
+              <span>Create Account & Launch Workspace</span>
+              <ArrowRight class="h-4 w-4" />
+            </template>
           </button>
         </form>
 
@@ -123,9 +148,11 @@ function submit() {
 
       <div class="mt-6 flex items-center justify-center gap-2 text-xs text-slate-500">
         <ShieldCheck class="h-4 w-4 text-emerald-500" />
-        <span>Free tier includes 3 full-scope AI proposals</span>
+        <span>Free tier includes 3 full-scope AI proposals in Philippine Pesos (₱)</span>
       </div>
     </div>
+
+    <!-- Active Toast Notifications -->
+    <ToastContainer />
   </div>
 </template>
-

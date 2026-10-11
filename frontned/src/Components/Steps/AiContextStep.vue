@@ -17,32 +17,6 @@ import {
 
 const store = useProposalStore()
 
-const promptPresets = [
-  {
-    label: 'Cost-Saving & High ROI',
-    text: 'Pitch this as a decisive cost-saving measure with an accelerated 6-month ROI. Highlight automated operational efficiencies, reduced manual labor overhead by 42%, and zero-downtime cloud migration guarantee.',
-  },
-  {
-    label: 'Speed-to-Market & Agility',
-    text: 'Frame this proposal around aggressive time-to-value. Emphasize that modular AI pipelines allow rapid feature launches in weeks instead of quarters, outpacing key market rivals.',
-  },
-  {
-    label: 'Security & Enterprise Compliance',
-    text: 'Prioritize bank-grade data security, strict SOC2 Type II compliance, on-premise model deployment options, and isolated tenant architectures to mitigate all cyber risks.',
-  },
-  {
-    label: 'Modernization & Scalability',
-    text: 'Highlight legacy system refactoring into cloud-native microservices. Position this as an investment in sustainable technical equity and multi-year scalability.',
-  },
-]
-
-const tones = [
-  { id: 'persuasive', label: 'Persuasive & ROI' },
-  { id: 'cost-saving', label: 'Cost-Saving Focus' },
-  { id: 'formal', label: 'Corporate & Formal' },
-  { id: 'technical', label: 'Technical & Deep' },
-]
-
 function applyPreset(text) {
   store.aiPromptContext = text
 }
@@ -95,13 +69,16 @@ function applyPreset(text) {
         </span>
         <div class="flex flex-wrap gap-1.5">
           <button
-            v-for="preset in promptPresets"
-            :key="preset.label"
+            v-for="preset in store.promptPresets"
+            :key="preset.key || preset.label"
             type="button"
             @click="applyPreset(preset.text)"
-            class="text-[11px] px-2.5 py-1 rounded-lg border border-slate-200 bg-white hover:bg-brand-50 hover:border-brand-300 hover:text-brand-700 text-slate-600 transition-colors"
+            class="text-[11px] px-2.5 py-1 rounded-lg border border-slate-200 bg-white hover:bg-brand-50 hover:border-brand-300 hover:text-brand-700 text-slate-600 transition-colors flex items-center gap-1.5"
           >
-            {{ preset.label }}
+            <span>{{ preset.label }}</span>
+            <span v-if="preset.badge" class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-brand-100 text-brand-700">
+              {{ preset.badge }}
+            </span>
           </button>
         </div>
       </div>
@@ -116,12 +93,12 @@ function applyPreset(text) {
         </label>
         <div class="grid grid-cols-2 gap-2">
           <button
-            v-for="tone in tones"
-            :key="tone.id"
+            v-for="tone in store.aiTones"
+            :key="tone.key || tone.id"
             type="button"
-            @click="store.aiTone = tone.id"
+            @click="store.aiTone = (tone.key || tone.id)"
             :class="[
-              store.aiTone === tone.id
+              store.aiTone === (tone.key || tone.id)
                 ? 'bg-brand-600 text-white border-brand-600 shadow-xs font-semibold'
                 : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 font-medium',
               'py-2 px-2.5 rounded-lg border text-xs text-center transition-all'

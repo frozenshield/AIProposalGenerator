@@ -51,7 +51,7 @@ const statusFilters = [
 ]
 
 function formatCurrency(val) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val || 0)
+  return store.formatCurrency(val)
 }
 
 const filteredProposals = computed(() => {

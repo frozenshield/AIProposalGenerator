@@ -6,7 +6,7 @@ import { Layers, Plus, Tag, Check } from 'lucide-vue-next'
 const store = useProposalStore()
 
 function formatCurrency(val) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val)
+  return store.formatCurrency(val)
 }
 </script>
 

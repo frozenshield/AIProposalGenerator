@@ -1,17 +1,33 @@
 <script setup>
-import { useForm } from '@inertiajs/vue3'
-import { Sparkles, Mail, Lock, ArrowRight, ShieldCheck } from 'lucide-vue-next'
+import { ref } from 'vue'
+import { useAuthStore } from '@/stores/authStore'
+import ToastContainer from '@/Components/UI/ToastContainer.vue'
+import {
+  Sparkles,
+  Mail,
+  Lock,
+  ArrowRight,
+  ShieldCheck,
+  Loader2,
+  AlertCircle,
+} from 'lucide-vue-next'
 
-const form = useForm({
+const authStore = useAuthStore()
+
+const form = ref({
   email: 'admin@aiproposals.io',
   password: 'password123',
   remember: false,
 })
 
-function submit() {
-  form.post('/login', {
-    onFinish: () => form.reset('password'),
-  })
+async function submit() {
+  const result = await authStore.login(form.value)
+  if (result.success) {
+    // Navigate smoothly
+    setTimeout(() => {
+      window.location.href = result.redirect || '/dashboard'
+    }, 600)
+  }
 }
 </script>
 
@@ -27,6 +43,15 @@ function submit() {
 
     <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4">
       <div class="bg-slate-900 border border-slate-800 rounded-2xl py-8 px-6 sm:px-10 shadow-2xl space-y-6">
+        <!-- Error Banner if failed -->
+        <div
+          v-if="authStore.authError"
+          class="flex items-center gap-2.5 p-3 rounded-xl bg-rose-950/80 border border-rose-500/40 text-rose-200 text-xs"
+        >
+          <AlertCircle class="h-4 w-4 flex-shrink-0 text-rose-400" />
+          <span>{{ authStore.authError }}</span>
+        </div>
+
         <form @submit.prevent="submit" class="space-y-5">
           <!-- Email Field -->
           <div class="space-y-1.5">
@@ -44,7 +69,6 @@ function submit() {
                 placeholder="name@company.com"
               />
             </div>
-            <p v-if="form.errors.email" class="text-xs text-rose-400 font-medium">{{ form.errors.email }}</p>
           </div>
 
           <!-- Password Field -->
@@ -65,7 +89,6 @@ function submit() {
                 placeholder="••••••••••••"
               />
             </div>
-            <p v-if="form.errors.password" class="text-xs text-rose-400 font-medium">{{ form.errors.password }}</p>
           </div>
 
           <!-- Remember Me -->
@@ -74,7 +97,7 @@ function submit() {
               <input
                 v-model="form.remember"
                 type="checkbox"
-                class="rounded border-slate-800 bg-slate-950 text-brand-600 focus:ring-brand-500"
+                class="rounded border-slate-800 bg-slate-950 text-brand-600 focus:ring-brand-500 cursor-pointer"
               />
               <span>Remember this device</span>
             </label>
@@ -83,11 +106,14 @@ function submit() {
           <!-- Submit Button -->
           <button
             type="submit"
-            :disabled="form.processing"
+            :disabled="authStore.isLoading"
             class="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-brand-600 hover:bg-brand-500 disabled:opacity-50 text-white font-semibold text-sm transition-all shadow-lg shadow-brand-500/25 cursor-pointer"
           >
-            <span>Sign In to Workspace</span>
-            <ArrowRight class="h-4 w-4" />
+            <Loader2 v-if="authStore.isLoading" class="h-4 w-4 animate-spin" />
+            <template v-else>
+              <span>Sign In to Workspace</span>
+              <ArrowRight class="h-4 w-4" />
+            </template>
           </button>
         </form>
 
@@ -102,6 +128,8 @@ function submit() {
         <span>Enterprise Isolated Multi-Tenant Cloud</span>
       </div>
     </div>
+
+    <!-- Active Toast Notifications -->
+    <ToastContainer />
   </div>
 </template>
-

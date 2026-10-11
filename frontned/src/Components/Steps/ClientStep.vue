@@ -69,19 +69,19 @@ const currentClient = computed(() => store.selectedClient)
       <div class="flex items-start justify-between">
         <div class="flex items-center gap-3.5">
           <img
-            :src="currentClient.avatar"
-            :alt="currentClient.name"
+            :src="currentClient.avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80'"
+            :alt="currentClient.name || 'Client'"
             class="h-12 w-12 rounded-xl object-cover ring-2 ring-brand-500/20 shadow-xs"
           />
           <div>
             <h3 class="text-sm font-bold text-slate-900 flex items-center gap-1.5">
-              {{ currentClient.name }}
+              {{ currentClient.name || 'Select Client' }}
               <CheckCircle2 class="h-4 w-4 text-brand-600 inline" />
             </h3>
-            <p class="text-xs text-slate-600 font-medium">{{ currentClient.role }}</p>
+            <p class="text-xs text-slate-600 font-medium">{{ currentClient.role || 'Client Representative' }}</p>
             <p class="text-xs text-brand-700 font-semibold mt-0.5 flex items-center gap-1">
               <Building2 class="h-3.5 w-3.5 text-brand-500" />
-              {{ currentClient.company }}
+              {{ currentClient.company || currentClient.name }}
             </p>
           </div>
         </div>

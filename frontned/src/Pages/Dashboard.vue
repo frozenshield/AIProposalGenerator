@@ -12,15 +12,15 @@ import {
 
 const stats = [
   { name: 'Active Proposals', value: '14', change: '+18% this month', icon: FileText },
-  { name: 'Total Win Value', value: '$284,500', change: '+32% closing rate', icon: TrendingUp },
+  { name: 'Total Win Value', value: '₱2,845,000', change: '+32% closing rate', icon: TrendingUp },
   { name: 'Client Accounts', value: '42', change: '4 new this week', icon: Users },
   { name: 'Avg. AI Turnaround', value: '3.2 mins', change: '85% faster', icon: Sparkles },
 ]
 
 const recentProposals = [
-  { id: 'PROP-2026-884', client: 'Apex Retail Solutions', value: '$37,600', status: 'Drafting', date: 'Just now' },
-  { id: 'PROP-2026-883', client: 'OmniHealth Tech', value: '$64,200', status: 'Sent', date: '2 days ago' },
-  { id: 'PROP-2026-882', client: 'FinVanguard Global', value: '$112,000', status: 'Approved', date: 'Oct 04' },
+  { id: 'PROP-2026-884', client: 'Apex Retail Solutions Philippines', value: '₱376,540', status: 'Drafting', date: 'Just now' },
+  { id: 'PROP-2026-883', client: 'OmniHealth Tech Asia', value: '₱642,000', status: 'Sent', date: '2 days ago' },
+  { id: 'PROP-2026-882', client: 'FinVanguard Global Capital', value: '₱1,120,000', status: 'Approved', date: 'Oct 04' },
 ]
 </script>
 
