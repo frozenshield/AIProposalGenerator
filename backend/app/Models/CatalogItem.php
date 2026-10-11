@@ -6,6 +6,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CatalogItem extends Model
@@ -18,6 +19,7 @@ class CatalogItem extends Model
      * @var array<int, string>
      */
     protected $fillable = [
+        'user_id',
         'name',
         'description',
         'category',
@@ -40,6 +42,16 @@ class CatalogItem extends Model
     }
 
     /**
+     * Get the user that owns this catalog item (or null for global templates).
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    /**
      * Get all proposal line items that reference this catalog item.
      *
      * @return HasMany<ProposalLineItem, $this>
@@ -49,4 +61,3 @@ class CatalogItem extends Model
         return $this->hasMany(ProposalLineItem::class);
     }
 }
-

@@ -15,7 +15,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 use Throwable;
@@ -27,16 +26,23 @@ class ProposalController extends Controller
     ) {}
 
     /**
-     * Display a listing of all proposals.
+     * Display a listing of all proposals scoped to the authenticated tenant.
      */
     public function index(Request $request): Response
     {
-        $proposals = Proposal::with(['client', 'lineItems', 'sections'])
-            ->latest()
-            ->get();
+        $user = $request->user();
 
-        $clients = Client::all();
-        $catalog = CatalogItem::all();
+        $proposals = $user
+            ? $user->proposals()->with(['client', 'lineItems', 'sections'])->latest()->get()
+            : Proposal::with(['client', 'lineItems', 'sections'])->latest()->get();
+
+        $clients = $user
+            ? $user->clients()->orderBy('name')->get()
+            : Client::orderBy('name')->get();
+
+        $catalog = $user
+            ? CatalogItem::where('user_id', $user->id)->orWhereNull('user_id')->orderBy('name')->get()
+            : CatalogItem::orderBy('name')->get();
 
         return Inertia::render('Proposals/Index', [
             'proposals' => $proposals,
@@ -48,10 +54,17 @@ class ProposalController extends Controller
     /**
      * Show the form for creating a new AI proposal.
      */
-    public function create(): Response
+    public function create(Request $request): Response
     {
-        $clients = Client::orderBy('name')->get();
-        $catalogItems = CatalogItem::orderBy('category')->orderBy('name')->get();
+        $user = $request->user();
+
+        $clients = $user
+            ? $user->clients()->orderBy('name')->get()
+            : Client::orderBy('name')->get();
+
+        $catalogItems = $user
+            ? CatalogItem::where('user_id', $user->id)->orWhereNull('user_id')->orderBy('category')->orderBy('name')->get()
+            : CatalogItem::orderBy('category')->orderBy('name')->get();
 
         return Inertia::render('Proposals/Create', [
             'clients' => $clients,
@@ -94,11 +107,17 @@ class ProposalController extends Controller
 
         $validated = $request->validated();
 
+        // Verify the client belongs to this tenant
+        $client = $user
+            ? $user->clients()->findOrFail($validated['client_id'])
+            : Client::findOrFail($validated['client_id']);
+
         $proposalNumber = 'PROP-' . date('Y') . '-' . str_pad((string) (Proposal::max('id') + 1), 3, '0', STR_PAD_LEFT);
         $title = $validated['title'] ?? 'Strategic AI Transformation Proposal (' . date('M Y') . ')';
 
         $proposal = Proposal::create([
-            'client_id' => $validated['client_id'],
+            'user_id' => $user?->id,
+            'client_id' => $client->id,
             'proposal_number' => $proposalNumber,
             'title' => $title,
             'status' => Proposal::STATUS_DRAFT,
@@ -156,8 +175,14 @@ class ProposalController extends Controller
     /**
      * Display the specified proposal with eager-loaded sections and line items.
      */
-    public function show(Proposal $proposal): Response
+    public function show(Request $request, Proposal $proposal): Response
     {
+        $user = $request->user();
+
+        if ($user && $proposal->user_id && $proposal->user_id !== $user->id) {
+            abort(403, 'Unauthorized access to proposal.');
+        }
+
         $proposal->load([
             'client',
             'sections',
@@ -174,6 +199,12 @@ class ProposalController extends Controller
      */
     public function updateStatus(UpdateProposalStatusRequest $request, Proposal $proposal): RedirectResponse
     {
+        $user = $request->user();
+
+        if ($user && $proposal->user_id && $proposal->user_id !== $user->id) {
+            abort(403, 'Unauthorized access to proposal.');
+        }
+
         $newStatus = (string) $request->validated('status');
         $oldStatus = $proposal->status;
 
@@ -193,4 +224,3 @@ class ProposalController extends Controller
             ->with('status', "Proposal status updated to '{$newStatus}'.");
     }
 }
-

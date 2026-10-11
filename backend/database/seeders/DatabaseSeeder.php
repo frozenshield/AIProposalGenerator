@@ -22,7 +22,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // 1. Seed Default Admin User
-        User::firstOrCreate(
+        $user = User::firstOrCreate(
             ['email' => 'admin@aiproposals.io'],
             [
                 'name' => 'Lead Solutions Architect',
@@ -76,6 +76,7 @@ class DatabaseSeeder extends Seeder
 
         $clients = [];
         foreach ($clientsData as $c) {
+            $c['user_id'] = $user->id;
             $clients[] = Client::firstOrCreate(['email' => $c['email']], $c);
         }
 
@@ -133,6 +134,7 @@ class DatabaseSeeder extends Seeder
 
         $catalog = [];
         foreach ($catalogItemsData as $item) {
+            $item['user_id'] = $user->id;
             $catalog[] = CatalogItem::firstOrCreate(['name' => $item['name']], $item);
         }
 
@@ -140,6 +142,7 @@ class DatabaseSeeder extends Seeder
         $wonProposal = Proposal::firstOrCreate(
             ['proposal_number' => 'PROP-2026-880'],
             [
+                'user_id' => $user->id,
                 'client_id' => $clients[0]->id,
                 'title' => 'Enterprise Cloud Modernization & Autonomous AI Ops',
                 'status' => Proposal::STATUS_WON,

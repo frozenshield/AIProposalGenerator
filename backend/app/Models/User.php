@@ -6,6 +6,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -49,6 +50,36 @@ class User extends Authenticatable
             'is_subscribed' => 'boolean',
             'proposals_count' => 'integer',
         ];
+    }
+
+    /**
+     * Client accounts owned by the user.
+     *
+     * @return HasMany<Client, $this>
+     */
+    public function clients(): HasMany
+    {
+        return $this->hasMany(Client::class);
+    }
+
+    /**
+     * Proposals created by the user.
+     *
+     * @return HasMany<Proposal, $this>
+     */
+    public function proposals(): HasMany
+    {
+        return $this->hasMany(Proposal::class);
+    }
+
+    /**
+     * Custom catalog items configured by the user.
+     *
+     * @return HasMany<CatalogItem, $this>
+     */
+    public function catalogItems(): HasMany
+    {
+        return $this->hasMany(CatalogItem::class);
     }
 
     /**

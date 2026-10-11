@@ -9,6 +9,7 @@ use App\Models\CatalogItem;
 use App\Models\Client;
 use App\Models\Proposal;
 use App\Models\ProposalSection;
+use App\Models\User;
 use App\Services\GeminiService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
@@ -20,6 +21,7 @@ class ProposalTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected User $user;
     protected Client $client;
     protected CatalogItem $catalogItem1;
     protected CatalogItem $catalogItem2;
@@ -28,7 +30,11 @@ class ProposalTest extends TestCase
     {
         parent::setUp();
 
+        $this->user = User::factory()->create();
+        $this->actingAs($this->user);
+
         $this->client = Client::create([
+            'user_id' => $this->user->id,
             'name' => 'Sarah Jenkins',
             'company' => 'Apex Retail Solutions',
             'role' => 'CTO',
@@ -37,6 +43,7 @@ class ProposalTest extends TestCase
         ]);
 
         $this->catalogItem1 = CatalogItem::create([
+            'user_id' => $this->user->id,
             'name' => 'AI Automated Workflow Engine',
             'category' => 'Artificial Intelligence',
             'unit_price' => 10000.00,
@@ -45,6 +52,7 @@ class ProposalTest extends TestCase
         ]);
 
         $this->catalogItem2 = CatalogItem::create([
+            'user_id' => $this->user->id,
             'name' => '24/7 Dedicated Support SLA',
             'category' => 'Managed Services',
             'unit_price' => 2000.00,
@@ -171,6 +179,7 @@ class ProposalTest extends TestCase
     public function test_show_proposal_renders_inertia_view(): void
     {
         $proposal = Proposal::create([
+            'user_id' => $this->user->id,
             'client_id' => $this->client->id,
             'proposal_number' => 'PROP-2026-001',
             'title' => 'Sample Proposal',
@@ -202,6 +211,7 @@ class ProposalTest extends TestCase
         Queue::fake();
 
         $proposal = Proposal::create([
+            'user_id' => $this->user->id,
             'client_id' => $this->client->id,
             'proposal_number' => 'PROP-2026-002',
             'title' => 'Closing Pitch',
@@ -228,6 +238,7 @@ class ProposalTest extends TestCase
     public function test_update_status_blocks_illegal_transitions(): void
     {
         $proposal = Proposal::create([
+            'user_id' => $this->user->id,
             'client_id' => $this->client->id,
             'proposal_number' => 'PROP-2026-003',
             'title' => 'Won Deal',
@@ -242,6 +253,26 @@ class ProposalTest extends TestCase
 
         $response->assertStatus(422);
         $response->assertJsonValidationErrors(['status']);
+    }
+
+    public function test_tenant_cannot_view_another_users_proposal(): void
+    {
+        $otherUser = User::factory()->create();
+
+        $foreignProposal = Proposal::create([
+            'user_id' => $otherUser->id,
+            'client_id' => $this->client->id,
+            'proposal_number' => 'PROP-OTHER-001',
+            'title' => 'Foreign Proposal',
+            'status' => 'draft',
+            'ai_prompt_context' => 'Classified data',
+            'grand_total' => 9999.00,
+        ]);
+
+        // Logged in as $this->user, attempting to view $otherUser's proposal must 403 Forbidden
+        $response = $this->get(route('proposals.show', $foreignProposal));
+
+        $response->assertStatus(403);
     }
 }
 

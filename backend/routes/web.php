@@ -2,15 +2,49 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\CatalogController;
+use App\Http\Controllers\ClientController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProposalController;
 use Illuminate\Support\Facades\Route;
 
-Route::redirect('/', '/proposals/create');
+// Public Root Redirect
+Route::get('/', function () {
+    return auth()->check() ? redirect()->route('dashboard') : redirect()->route('login');
+});
 
-Route::prefix('proposals')->name('proposals.')->group(function () {
-    Route::get('/', [ProposalController::class, 'index'])->name('index');
-    Route::get('/create', [ProposalController::class, 'create'])->name('create');
-    Route::post('/', [ProposalController::class, 'store'])->name('store');
-    Route::get('/{proposal}', [ProposalController::class, 'show'])->name('show');
-    Route::patch('/{proposal}/status', [ProposalController::class, 'updateStatus'])->name('status.update');
+// Guest Authentication Routes
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
+    Route::post('/register', [AuthController::class, 'register']);
+});
+
+// Authenticated Tenant Routes
+Route::middleware('auth')->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+    // Dashboard
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Clients Management
+    Route::get('/clients', [ClientController::class, 'index'])->name('clients.index');
+    Route::post('/clients', [ClientController::class, 'store'])->name('clients.store');
+    Route::delete('/clients/{client}', [ClientController::class, 'destroy'])->name('clients.destroy');
+
+    // Deliverables Catalog
+    Route::get('/catalog', [CatalogController::class, 'index'])->name('catalog.index');
+    Route::post('/catalog', [CatalogController::class, 'store'])->name('catalog.store');
+    Route::delete('/catalog/{catalogItem}', [CatalogController::class, 'destroy'])->name('catalog.destroy');
+
+    // AI Proposals Workflow
+    Route::prefix('proposals')->name('proposals.')->group(function () {
+        Route::get('/', [ProposalController::class, 'index'])->name('index');
+        Route::get('/create', [ProposalController::class, 'create'])->name('create');
+        Route::post('/', [ProposalController::class, 'store'])->name('store');
+        Route::get('/{proposal}', [ProposalController::class, 'show'])->name('show');
+        Route::patch('/{proposal}/status', [ProposalController::class, 'updateStatus'])->name('status.update');
+    });
 });

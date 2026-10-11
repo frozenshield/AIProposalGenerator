@@ -31,6 +31,7 @@ class Proposal extends Model
      * @var array<int, string>
      */
     protected $fillable = [
+        'user_id',
         'client_id',
         'proposal_number',
         'title',
@@ -64,6 +65,16 @@ class Proposal extends Model
             'grand_total' => 'decimal:2',
             'valid_days' => 'integer',
         ];
+    }
+
+    /**
+     * The user / tenant who authored this proposal.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     /**
@@ -114,4 +125,3 @@ class Proposal extends Model
         return $this->status === self::STATUS_WON;
     }
 }
-
