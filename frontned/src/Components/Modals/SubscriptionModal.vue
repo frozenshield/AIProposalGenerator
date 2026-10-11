@@ -66,8 +66,9 @@ async function handleUpgrade() {
 
   try {
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-    const response = await fetch('/subscription/checkout', {
+    const response = await fetch('/api/subscription/checkout', {
       method: 'POST',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -78,6 +79,16 @@ async function handleUpgrade() {
         plan: 'pro',
       }),
     })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      let errorJson = null
+      try {
+        errorJson = JSON.parse(errorText)
+      } catch (e) {}
+
+      throw new Error(errorJson?.message || errorJson?.error || `HTTP ${response.status}: Failed to initiate checkout session`)
+    }
 
     const data = await response.json()
 
@@ -92,6 +103,7 @@ async function handleUpgrade() {
     }
   } catch (err) {
     console.error('PayMongo Checkout Session error:', err)
+    alert(`Checkout error: ${err.message || 'Unable to connect to PayMongo'}`)
   } finally {
     isUpgrading.value = false
   }
