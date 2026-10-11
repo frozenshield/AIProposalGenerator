@@ -43,3 +43,4 @@ class ReferenceOption extends Model
         return $query->where('category', $category)->active();
     }
 }
+
