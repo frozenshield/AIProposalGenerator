@@ -32,7 +32,7 @@ class CatalogController extends Controller
     /**
      * Store a new custom catalog deliverable scoped to the authenticated tenant.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): \Illuminate\Http\JsonResponse|RedirectResponse
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -45,10 +45,16 @@ class CatalogController extends Controller
 
         $user = $request->user();
 
-        if ($user) {
-            $user->catalogItems()->create($validated);
-        } else {
-            CatalogItem::create($validated);
+        $item = $user
+            ? $user->catalogItems()->create($validated)
+            : CatalogItem::create($validated);
+
+        if ($request->wantsJson() || $request->is('api/*')) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Catalog item registered successfully.',
+                'item' => $item,
+            ], 201);
         }
 
         return redirect()->back()->with('status', 'Catalog item registered successfully.');

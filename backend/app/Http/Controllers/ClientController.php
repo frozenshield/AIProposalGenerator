@@ -31,7 +31,7 @@ class ClientController extends Controller
     /**
      * Store a new client scoped to the authenticated tenant.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): \Illuminate\Http\JsonResponse|RedirectResponse
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -41,15 +41,21 @@ class ClientController extends Controller
             'phone' => ['nullable', 'string', 'max:50'],
             'industry' => ['nullable', 'string', 'max:100'],
             'address' => ['nullable', 'string', 'max:500'],
-            'avatar' => ['nullable', 'url', 'max:500'],
+            'avatar' => ['nullable', 'string', 'max:500'],
         ]);
 
         $user = $request->user();
 
-        if ($user) {
-            $user->clients()->create($validated);
-        } else {
-            Client::create($validated);
+        $client = $user
+            ? $user->clients()->create($validated)
+            : Client::create($validated);
+
+        if ($request->wantsJson() || $request->is('api/*')) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Client account added successfully.',
+                'client' => $client,
+            ], 201);
         }
 
         return redirect()->back()->with('status', 'Client account added successfully.');

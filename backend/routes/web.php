@@ -8,6 +8,8 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProposalController;
 use App\Http\Controllers\ReferenceController;
+use App\Http\Controllers\SubscriptionController;
+use App\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Route;
 
 // Public Root Redirect
@@ -18,6 +20,10 @@ Route::get('/', function () {
 // System Reference Data Endpoint (for dynamic database-backed dropdowns)
 Route::get('/api/reference-options', [ReferenceController::class, 'index'])->name('api.reference-options');
 Route::get('/api/user', [AuthController::class, 'user'])->name('api.user');
+
+// PayMongo Webhook Endpoint (Public, CSRF Exempt)
+Route::post('/webhooks/paymongo', [WebhookController::class, 'paymongo'])->name('webhooks.paymongo');
+Route::post('/api/webhooks/paymongo', [WebhookController::class, 'paymongo']);
 
 // Guest Authentication Routes
 Route::middleware('guest')->group(function () {
@@ -35,17 +41,23 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::post('/api/logout', [AuthController::class, 'logout']);
 
+    // PayMongo Checkout Session
+    Route::post('/subscription/checkout', [SubscriptionController::class, 'checkout'])->name('subscription.checkout');
+    Route::post('/api/subscription/checkout', [SubscriptionController::class, 'checkout']);
+
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Clients Management
     Route::get('/clients', [ClientController::class, 'index'])->name('clients.index');
     Route::post('/clients', [ClientController::class, 'store'])->name('clients.store');
+    Route::post('/api/clients', [ClientController::class, 'store']);
     Route::delete('/clients/{client}', [ClientController::class, 'destroy'])->name('clients.destroy');
 
     // Deliverables Catalog
     Route::get('/catalog', [CatalogController::class, 'index'])->name('catalog.index');
     Route::post('/catalog', [CatalogController::class, 'store'])->name('catalog.store');
+    Route::post('/api/catalog', [CatalogController::class, 'store']);
     Route::delete('/catalog/{catalogItem}', [CatalogController::class, 'destroy'])->name('catalog.destroy');
 
     // AI Proposals Workflow
@@ -57,3 +69,4 @@ Route::middleware('auth')->group(function () {
         Route::patch('/{proposal}/status', [ProposalController::class, 'updateStatus'])->name('status.update');
     });
 });
+
