@@ -55,7 +55,7 @@ function formatCurrency(val) {
 }
 
 const filteredProposals = computed(() => {
-  let list = [...store.proposalsList]
+  let list = [...(store.proposalsList || [])]
 
   // Filter by status
   if (selectedStatus.value !== 'all') {
@@ -87,7 +87,7 @@ const filteredProposals = computed(() => {
 })
 
 const totalPipelineValue = computed(() => {
-  return store.proposalsList.reduce((acc, p) => acc + (p.total || 0), 0)
+  return (store.proposalsList || []).reduce((acc, p) => acc + (p.total || 0), 0)
 })
 
 function getStatusBadgeClass(status) {
@@ -125,7 +125,7 @@ function closePreview() {
               Proposals Directory
             </h1>
             <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-50 text-brand-700 border border-brand-200">
-              {{ store.proposalsList.length }} Commercial Deals
+              {{ (store.proposalsList || []).length }} Commercial Deals
             </span>
           </div>
           <p class="text-xs sm:text-sm text-slate-500 mt-1">
@@ -154,7 +154,7 @@ function closePreview() {
               <FileText class="h-4 w-4" />
             </div>
           </div>
-          <p class="text-xl sm:text-2xl font-extrabold text-slate-900">{{ store.proposalsList.length }}</p>
+          <p class="text-xl sm:text-2xl font-extrabold text-slate-900">{{ (store.proposalsList || []).length }}</p>
           <p class="text-[11px] font-medium text-emerald-600">+2 generated this week</p>
         </div>
 
