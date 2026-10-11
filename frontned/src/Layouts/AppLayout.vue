@@ -45,7 +45,13 @@ const activeAiModel = ref(props.aiModel || store.activeAiModel || 'Gemini Flash-
 const isMobileMenuOpen = ref(false)
 
 const page = usePage()
-const authUser = computed(() => page.props.auth?.user || null)
+const authUser = computed(() => {
+  try {
+    return page?.props?.auth?.user || null
+  } catch {
+    return null
+  }
+})
 const isAuthenticated = computed(() => !!authUser.value)
 
 const userInitials = computed(() => {
@@ -247,8 +253,8 @@ const breadcrumbInfo = computed(() => {
                 <span>{{ userInitials }}</span>
               </div>
               <div class="min-w-0">
-                <p class="text-sm font-semibold text-white truncate leading-snug">{{ authUser.name }}</p>
-                <p class="text-xs text-slate-400 truncate">{{ authUser.email }}</p>
+                <p class="text-sm font-semibold text-white truncate leading-snug">{{ authUser?.name }}</p>
+                <p class="text-xs text-slate-400 truncate">{{ authUser?.email }}</p>
               </div>
             </div>
             <div class="flex items-center gap-1 text-slate-400">
@@ -360,8 +366,8 @@ const breadcrumbInfo = computed(() => {
                   {{ userInitials }}
                 </div>
                 <div class="min-w-0">
-                  <p class="text-xs font-semibold text-white truncate">{{ authUser.name }}</p>
-                  <p class="text-[11px] text-slate-400 truncate">{{ authUser.email }}</p>
+                  <p class="text-xs font-semibold text-white truncate">{{ authUser?.name }}</p>
+                  <p class="text-[11px] text-slate-400 truncate">{{ authUser?.email }}</p>
                 </div>
               </div>
               <button

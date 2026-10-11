@@ -70,6 +70,8 @@ if (appEl && appEl.dataset.page) {
     '/dashboard': () => import('./Pages/Dashboard.vue'),
     '/clients': () => import('./Pages/Clients.vue'),
     '/catalog': () => import('./Pages/Catalog.vue'),
+    '/login': () => import('./Pages/Auth/Login.vue'),
+    '/register': () => import('./Pages/Auth/Register.vue'),
   }
 
   const currentComponent = shallowRef(null)
