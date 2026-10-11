@@ -37,6 +37,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const response = await fetch('/api/login', {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -54,8 +55,9 @@ export const useAuthStore = defineStore('auth', () => {
       // Handle 422 or error status
       const errorData = await response.json().catch(() => null)
       const errorMsg =
+        (errorData?.errors ? Object.values(errorData.errors).flat().join(' ') : null) ||
         errorData?.message ||
-        (errorData?.errors ? Object.values(errorData.errors).flat().join(' ') : 'Invalid corporate credentials.')
+        'Invalid corporate credentials.'
       
       authError.value = errorMsg
       toast.error(errorMsg, 'Login Failed')
@@ -99,6 +101,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const response = await fetch('/api/register', {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -115,8 +118,9 @@ export const useAuthStore = defineStore('auth', () => {
 
       const errorData = await response.json().catch(() => null)
       const errorMsg =
+        (errorData?.errors ? Object.values(errorData.errors).flat().join(' ') : null) ||
         errorData?.message ||
-        (errorData?.errors ? Object.values(errorData.errors).flat().join(' ') : 'Registration failed.')
+        'Registration failed.'
       
       authError.value = errorMsg
       toast.error(errorMsg, 'Registration Failed')
@@ -143,6 +147,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       await fetch('/api/logout', {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Accept': 'application/json',
         },
@@ -157,6 +162,7 @@ export const useAuthStore = defineStore('auth', () => {
   async function checkAuth() {
     try {
       const res = await fetch('/api/user', {
+        credentials: 'include',
         headers: { 'Accept': 'application/json' },
       })
       if (res.ok) {
