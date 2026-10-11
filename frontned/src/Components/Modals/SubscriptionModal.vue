@@ -60,13 +60,41 @@ const proFeatures = [
   },
 ]
 
-function handleUpgrade() {
+async function handleUpgrade() {
+  if (isUpgrading.value) return
   isUpgrading.value = true
-  // Emits upgrade event to parent or triggers checkout
-  emit('upgrade', {
-    cycle: billingCycle.value,
-    plan: 'pro',
-  })
+
+  try {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+    const response = await fetch('/subscription/checkout', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        ...(csrfToken ? { 'X-CSRF-TOKEN': csrfToken } : {}),
+      },
+      body: JSON.stringify({
+        cycle: billingCycle.value,
+        plan: 'pro',
+      }),
+    })
+
+    const data = await response.json()
+
+    if (data.checkout_url) {
+      // Redirect to real PayMongo Hosted Checkout page
+      window.location.href = data.checkout_url
+      return
+    }
+
+    if (data.error) {
+      alert(`Could not initiate checkout: ${data.error}`)
+    }
+  } catch (err) {
+    console.error('PayMongo Checkout Session error:', err)
+  } finally {
+    isUpgrading.value = false
+  }
 }
 
 function handleClose() {

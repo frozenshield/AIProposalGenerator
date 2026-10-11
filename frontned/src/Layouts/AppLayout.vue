@@ -57,6 +57,15 @@ const authUser = computed(() => {
 })
 const isAuthenticated = computed(() => !!authUser.value)
 
+// Phase 4: Pro User Interface check from usePage().props.auth.user.is_subscribed
+const isSubscribed = computed(() => {
+  try {
+    return Boolean(page?.props?.auth?.user?.is_subscribed ?? authUser.value?.is_subscribed ?? store.isSubscribed)
+  } catch {
+    return Boolean(authUser.value?.is_subscribed ?? store.isSubscribed)
+  }
+})
+
 const userInitials = computed(() => {
   if (!authUser.value?.name) return 'U'
   return authUser.value.name
@@ -259,7 +268,20 @@ const breadcrumbInfo = computed(() => {
                 <span>{{ userInitials }}</span>
               </div>
               <div class="min-w-0">
-                <p class="text-sm font-semibold text-white truncate leading-snug">{{ authUser?.name }}</p>
+                <div class="flex items-center gap-1.5">
+                  <p class="text-sm font-semibold text-white truncate leading-snug">{{ authUser?.name }}</p>
+                  <!-- Pro User Golden Star Badge -->
+                  <span
+                    v-if="isSubscribed"
+                    class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 shadow-xs flex-shrink-0"
+                    title="Verified Pro Member"
+                  >
+                    <svg class="h-2.5 w-2.5 fill-current text-slate-950" viewBox="0 0 24 24">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                    PRO
+                  </span>
+                </div>
                 <p class="text-xs text-slate-400 truncate">{{ authUser?.email }}</p>
               </div>
             </div>
@@ -372,7 +394,18 @@ const breadcrumbInfo = computed(() => {
                   {{ userInitials }}
                 </div>
                 <div class="min-w-0">
-                  <p class="text-xs font-semibold text-white truncate">{{ authUser?.name }}</p>
+                  <div class="flex items-center gap-1.5">
+                    <p class="text-xs font-semibold text-white truncate">{{ authUser?.name }}</p>
+                    <span
+                      v-if="isSubscribed"
+                      class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 shadow-xs flex-shrink-0"
+                    >
+                      <svg class="h-2 w-2 fill-current text-slate-950" viewBox="0 0 24 24">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                      </svg>
+                      PRO
+                    </span>
+                  </div>
                   <p class="text-[11px] text-slate-400 truncate">{{ authUser?.email }}</p>
                 </div>
               </div>
@@ -433,9 +466,9 @@ const breadcrumbInfo = computed(() => {
             </span>
           </div>
 
-          <!-- Upgrade to Pro header pill (shown for free users) -->
+          <!-- Upgrade to Pro header pill (hidden for pro subscribers) -->
           <button
-            v-if="!store.isSubscribed"
+            v-if="!isSubscribed"
             type="button"
             @click="store.triggerLimitReached('Unlock unlimited AI proposals, Gemini 1.5 Pro, and domain RAG memory.')"
             class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-500 to-brand-600 hover:from-amber-400 hover:to-brand-500 text-white text-xs font-bold shadow-xs hover:shadow-sm transition-all cursor-pointer"
