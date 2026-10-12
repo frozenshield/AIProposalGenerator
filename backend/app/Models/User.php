@@ -23,6 +23,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
         'proposals_count',
         'is_subscribed',
         'subscription_tier',
@@ -49,6 +50,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'role' => 'string',
             'is_subscribed' => 'boolean',
             'subscription_tier' => 'string',
             'subscribed_at' => 'datetime',
@@ -61,7 +63,15 @@ class User extends Authenticatable
      */
     public function isPro(): bool
     {
-        return (bool) ($this->is_subscribed || $this->subscription_tier === 'pro');
+        return (bool) ($this->is_subscribed || $this->subscription_tier === 'pro' || $this->isAdmin());
+    }
+
+    /**
+     * Check if the user is a platform administrator.
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin' || $this->email === 'admin@aiproposals.io';
     }
 
     /**

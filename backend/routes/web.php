@@ -70,3 +70,21 @@ Route::middleware('auth')->group(function () {
     });
 });
 
+// Platform Administration Routes
+use App\Http\Controllers\Admin\AdminController;
+
+Route::prefix('admin')->name('admin.')->group(function () {
+    Route::get('/login', [AdminController::class, 'showLogin'])->name('login');
+    Route::post('/login', [AdminController::class, 'login']);
+    Route::post('/logout', [AdminController::class, 'logout'])->name('logout');
+
+    Route::middleware(['auth', 'admin'])->group(function () {
+        Route::get('/', function () {
+            return redirect()->route('admin.dashboard');
+        });
+        Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
+        Route::post('/test-ai-studio', [AdminController::class, 'testAiStudio'])->name('test-ai-studio');
+        Route::post('/users/{user}/toggle-pro', [AdminController::class, 'toggleUserPro'])->name('users.toggle-pro');
+    });
+});
+
