@@ -22,18 +22,23 @@ const submit = async () => {
   localError.value = ''
   isSubmitting.value = true
 
-  // Try standard Inertia POST
-  if (typeof form.post === 'function') {
-    form.post('/admin/login', {
-      onError: (err) => {
-        isSubmitting.value = false
-        localError.value = err?.email || err?.message || 'Invalid administrative credentials.'
-      },
-      onFinish: () => {
-        isSubmitting.value = false
-      },
-    })
-    return
+  // Try standard Inertia POST if actively running in Inertia environment
+  const isInertia = typeof window !== 'undefined' && Boolean(document.getElementById('app')?.dataset?.page)
+  if (isInertia && typeof form.post === 'function') {
+    try {
+      form.post('/admin/login', {
+        onError: (err) => {
+          isSubmitting.value = false
+          localError.value = err?.email || err?.message || 'Invalid administrative credentials.'
+        },
+        onFinish: () => {
+          isSubmitting.value = false
+        },
+      })
+      return
+    } catch (e) {
+      console.warn('Inertia post failed, falling back to fetch API:', e)
+    }
   }
 
   // Standalone Vite Dev Mode Fallback

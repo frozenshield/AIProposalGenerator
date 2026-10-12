@@ -124,8 +124,10 @@ const togglePro = async (user) => {
   notificationMessage.value = ''
 
   try {
-    // Try Inertia router post first if available
-    if (typeof router?.post === 'function') {
+    const isInertia = typeof window !== 'undefined' && Boolean(document.getElementById('app')?.dataset?.page)
+
+    // Try Inertia router post first if available in active Inertia environment
+    if (isInertia && typeof router?.post === 'function') {
       router.post(`/admin/users/${user.id}/toggle-pro`, {}, {
         preserveScroll: true,
         onSuccess: () => {
@@ -160,7 +162,8 @@ const togglePro = async (user) => {
 }
 
 const handleAdminLogout = () => {
-  if (typeof router?.post === 'function') {
+  const isInertia = typeof window !== 'undefined' && Boolean(document.getElementById('app')?.dataset?.page)
+  if (isInertia && typeof router?.post === 'function') {
     router.post('/admin/logout')
   } else {
     window.location.href = '/admin/login'

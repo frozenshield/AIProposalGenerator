@@ -15,7 +15,7 @@ class CatalogController extends Controller
     /**
      * Display the tenant's deliverables catalog.
      */
-    public function index(Request $request): Response
+    public function index(Request $request): Response|\Illuminate\Http\JsonResponse
     {
         $user = $request->user();
 
@@ -23,6 +23,13 @@ class CatalogController extends Controller
         $catalog = $user
             ? CatalogItem::where('user_id', $user->id)->orWhereNull('user_id')->orderBy('category')->get()
             : CatalogItem::orderBy('category')->get();
+
+        if ($request->wantsJson() || $request->is('api/*')) {
+            return response()->json([
+                'success' => true,
+                'catalog' => $catalog,
+            ]);
+        }
 
         return Inertia::render('Catalog', [
             'catalog' => $catalog,
@@ -63,7 +70,7 @@ class CatalogController extends Controller
     /**
      * Delete a catalog item belonging to the tenant.
      */
-    public function destroy(Request $request, CatalogItem $catalogItem): RedirectResponse
+    public function destroy(Request $request, CatalogItem $catalogItem): \Illuminate\Http\JsonResponse|RedirectResponse
     {
         $user = $request->user();
 
@@ -72,6 +79,13 @@ class CatalogController extends Controller
         }
 
         $catalogItem->delete();
+
+        if ($request->wantsJson() || $request->is('api/*')) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Catalog deliverable removed.',
+            ]);
+        }
 
         return redirect()->back()->with('status', 'Catalog deliverable removed.');
     }

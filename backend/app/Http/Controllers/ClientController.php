@@ -15,13 +15,20 @@ class ClientController extends Controller
     /**
      * Display the tenant's clients.
      */
-    public function index(Request $request): Response
+    public function index(Request $request): Response|\Illuminate\Http\JsonResponse
     {
         $user = $request->user();
 
         $clients = $user
             ? $user->clients()->latest()->get()
             : Client::latest()->get();
+
+        if ($request->wantsJson() || $request->is('api/*')) {
+            return response()->json([
+                'success' => true,
+                'clients' => $clients,
+            ]);
+        }
 
         return Inertia::render('Clients', [
             'clients' => $clients,
@@ -64,7 +71,7 @@ class ClientController extends Controller
     /**
      * Delete a client belonging to the authenticated tenant.
      */
-    public function destroy(Request $request, Client $client): RedirectResponse
+    public function destroy(Request $request, Client $client): \Illuminate\Http\JsonResponse|RedirectResponse
     {
         $user = $request->user();
 
@@ -73,6 +80,13 @@ class ClientController extends Controller
         }
 
         $client->delete();
+
+        if ($request->wantsJson() || $request->is('api/*')) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Client account removed.',
+            ]);
+        }
 
         return redirect()->back()->with('status', 'Client account removed.');
     }

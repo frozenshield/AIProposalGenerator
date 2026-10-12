@@ -19,9 +19,16 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('/webhooks/paymongo', [PayMongoWebhookController::class, 'handle'])->name('api.webhooks.paymongo');
 Route::post('/subscription/checkout', [SubscriptionController::class, 'checkout'])->name('api.subscription.checkout');
-Route::post('/catalog/ai-generate', [\App\Http\Controllers\CatalogController::class, 'aiGenerate']);
-Route::post('/catalog', [\App\Http\Controllers\CatalogController::class, 'store']);
+// Clients API
+Route::get('/clients', [\App\Http\Controllers\ClientController::class, 'index']);
 Route::post('/clients', [\App\Http\Controllers\ClientController::class, 'store']);
+Route::delete('/clients/{client}', [\App\Http\Controllers\ClientController::class, 'destroy']);
+
+// Catalog API
+Route::get('/catalog', [\App\Http\Controllers\CatalogController::class, 'index']);
+Route::post('/catalog', [\App\Http\Controllers\CatalogController::class, 'store']);
+Route::post('/catalog/ai-generate', [\App\Http\Controllers\CatalogController::class, 'aiGenerate']);
+Route::delete('/catalog/{catalogItem}', [\App\Http\Controllers\CatalogController::class, 'destroy']);
 
 // Admin API endpoints
 use App\Http\Controllers\Admin\AdminController;
