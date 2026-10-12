@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useToast } from '@/composables/useToast'
+import { useProposalStore } from '@/stores/proposalStore'
 
 export const useAuthStore = defineStore('auth', () => {
   const toast = useToast()
@@ -24,6 +25,11 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       if (userData) {
         localStorage.setItem('proposal_user', JSON.stringify(userData))
+        if (userData.is_subscribed || userData.subscription_tier === 'pro' || userData.role === 'admin') {
+          const store = useProposalStore()
+          store.isSubscribed = true
+          store.activeAiModel = 'Gemini 1.5 Pro'
+        }
       } else {
         localStorage.removeItem('proposal_user')
       }
@@ -69,8 +75,10 @@ export const useAuthStore = defineStore('auth', () => {
           id: 1,
           name: 'Lead Solutions Architect',
           email: 'admin@aiproposals.io',
+          role: 'admin',
           proposals_count: 0,
-          is_subscribed: false,
+          is_subscribed: true,
+          subscription_tier: 'pro',
         }
         setUser(demoUser)
         toast.success(`Welcome back, ${demoUser.name}! (Local Session)`, 'Authentication Success')

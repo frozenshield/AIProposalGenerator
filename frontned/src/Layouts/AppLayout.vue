@@ -43,8 +43,6 @@ const store = useProposalStore()
 const authStore = useAuthStore()
 
 // Reactive variable defaulting to 'Gemini Flash-Lite' as requested
-const activeAiModel = ref(props.aiModel || store.activeAiModel || 'Gemini Flash-Lite')
-
 const isMobileMenuOpen = ref(false)
 
 const page = usePage()
@@ -57,13 +55,31 @@ const authUser = computed(() => {
 })
 const isAuthenticated = computed(() => !!authUser.value)
 
-// Phase 4: Pro User Interface check from usePage().props.auth.user.is_subscribed
+const isAdmin = computed(() => {
+  return Boolean(
+    authUser.value?.role === 'admin' ||
+    authUser.value?.is_admin === true ||
+    authUser.value?.email === 'admin@aiproposals.io'
+  )
+})
+
+// Phase 4: Pro User Interface check (active when is_subscribed, tier is pro, admin, or store is subscribed)
 const isSubscribed = computed(() => {
-  try {
-    return Boolean(page?.props?.auth?.user?.is_subscribed ?? authUser.value?.is_subscribed ?? store.isSubscribed)
-  } catch {
-    return Boolean(authUser.value?.is_subscribed ?? store.isSubscribed)
+  const user = page?.props?.auth?.user || authUser.value
+  return Boolean(
+    user?.is_subscribed === true ||
+    user?.subscription_tier === 'pro' ||
+    user?.role === 'admin' ||
+    user?.email === 'admin@aiproposals.io' ||
+    store.isSubscribed === true
+  )
+})
+
+const activeAiModel = computed(() => {
+  if (isSubscribed.value) {
+    return 'Gemini 1.5 Pro'
   }
+  return props.aiModel || store.activeAiModel || 'Gemini Flash-Lite'
 })
 
 const userInitials = computed(() => {
@@ -234,33 +250,30 @@ const breadcrumbInfo = computed(() => {
           </a>
         </nav>
 
-        <!-- Secondary Section: AI Insights -->
-        <div class="pt-6">
+        <!-- Admin Quick Access (Administrators Only - 3rd picture moved to Admin Panel) -->
+        <div v-if="isAdmin" class="pt-6">
           <div class="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400 flex items-center justify-between">
-            <span>AI Engine Status</span>
+            <span>Administration</span>
             <span class="inline-block h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
           </div>
           
-          <div class="mx-1 p-3 rounded-xl bg-slate-950/60 border border-slate-800/70 text-xs space-y-2">
-            <div class="flex items-center justify-between text-slate-300">
-              <span class="flex items-center gap-1.5 font-medium">
-                <Zap class="h-3.5 w-3.5 text-amber-400" />
-                Prompt Quota
+          <a
+            href="/admin/dashboard"
+            class="mx-1 p-3 rounded-xl bg-slate-950/80 border border-emerald-500/30 hover:border-emerald-500/50 text-xs block space-y-1.5 group transition-colors"
+          >
+            <div class="flex items-center justify-between text-emerald-400 font-semibold">
+              <span class="flex items-center gap-1.5">
+                <ShieldCheck class="h-4 w-4 text-emerald-400" />
+                Admin Console
               </span>
-              <span class="text-[11px] font-semibold" :class="isSubscribed ? 'text-amber-400 font-bold' : 'text-brand-400'">
-                {{ isSubscribed ? 'Unlimited Pro' : '92% Available' }}
+              <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono">
+                AI Studio
               </span>
             </div>
-            <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-              <div
-                :class="isSubscribed ? 'bg-gradient-to-r from-amber-400 to-amber-500 w-full' : 'bg-gradient-to-r from-brand-500 to-emerald-400 w-[92%]'"
-                class="h-1.5 rounded-full"
-              ></div>
-            </div>
-            <p class="text-[11px] text-slate-400">
-              {{ isSubscribed ? 'Gemini 1.5 Pro synthesis unlocked with pgvector RAG memory.' : activeAiModel + ' synthesis ready for fast real-time drafting.' }}
+            <p class="text-[11px] text-slate-400 group-hover:text-slate-300 transition-colors">
+              Inspect model limits, Google AI Studio rate limits, and quota telemetry.
             </p>
-          </div>
+          </a>
         </div>
       </div>
 
@@ -269,25 +282,43 @@ const breadcrumbInfo = computed(() => {
         <template v-if="isAuthenticated">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3 min-w-0">
-              <div class="h-9 w-9 rounded-full ring-2 ring-brand-500/40 overflow-hidden flex-shrink-0 bg-slate-800 flex items-center justify-center font-bold text-xs text-brand-300">
+              <!-- Avatar with glowing golden ring when Pro -->
+              <div
+                class="h-9 w-9 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center font-bold text-xs transition-all"
+                :class="isSubscribed ? 'ring-2 ring-amber-400/90 shadow-md shadow-amber-500/30 bg-amber-500/20 text-amber-300' : 'ring-2 ring-brand-500/40 bg-slate-800 text-brand-300'"
+              >
                 <span>{{ userInitials }}</span>
               </div>
               <div class="min-w-0">
                 <div class="flex items-center gap-1.5">
                   <p class="text-sm font-semibold text-white truncate leading-snug">{{ authUser?.name }}</p>
-                  <!-- Pro User Golden Star Badge -->
+                  <!-- Pro User Golden Star Badge (Image 2) -->
                   <span
                     v-if="isSubscribed"
-                    class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 shadow-xs flex-shrink-0"
+                    class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-slate-950 shadow-md shadow-amber-500/20 border border-amber-200 flex-shrink-0"
                     title="Verified Pro Member"
                   >
-                    <svg class="h-2.5 w-2.5 fill-current text-slate-950" viewBox="0 0 24 24">
-                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                    </svg>
+                    <Crown class="h-2.5 w-2.5 fill-current text-slate-950" />
                     PRO
                   </span>
                 </div>
-                <p class="text-xs text-slate-400 truncate">{{ authUser?.email }}</p>
+                <!-- Pro Membership subtitle / status -->
+                <div class="flex items-center gap-1.5">
+                  <span
+                    v-if="isSubscribed"
+                    class="text-[11px] font-bold text-amber-300 flex items-center gap-1"
+                  >
+                    <Sparkles class="h-2.5 w-2.5 text-amber-400" />
+                    Pro Member
+                  </span>
+                  <span v-else class="text-[11px] text-slate-400">
+                    Free Tier
+                  </span>
+                  <span v-if="isAdmin" class="text-[9px] px-1 py-0.2 rounded bg-rose-500/20 text-rose-300 font-bold uppercase">
+                    Admin
+                  </span>
+                </div>
+                <p class="text-[11px] text-slate-500 truncate mt-0.5">{{ authUser?.email }}</p>
               </div>
             </div>
             <div class="flex items-center gap-1 text-slate-400">
@@ -395,7 +426,10 @@ const breadcrumbInfo = computed(() => {
           <template v-if="isAuthenticated">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2.5 min-w-0">
-                <div class="h-8 w-8 rounded-full bg-brand-600/30 text-brand-300 ring-1 ring-brand-500/30 flex items-center justify-center font-bold text-xs">
+                <div
+                  class="h-8 w-8 rounded-full flex items-center justify-center font-bold text-xs ring-2 transition-all"
+                  :class="isSubscribed ? 'ring-amber-400 bg-amber-500/20 text-amber-300' : 'ring-brand-500/30 bg-brand-600/30 text-brand-300'"
+                >
                   {{ userInitials }}
                 </div>
                 <div class="min-w-0">
@@ -403,13 +437,15 @@ const breadcrumbInfo = computed(() => {
                     <p class="text-xs font-semibold text-white truncate">{{ authUser?.name }}</p>
                     <span
                       v-if="isSubscribed"
-                      class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 shadow-xs flex-shrink-0"
+                      class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 shadow-xs flex-shrink-0"
                     >
-                      <svg class="h-2 w-2 fill-current text-slate-950" viewBox="0 0 24 24">
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                      </svg>
+                      <Crown class="h-2 w-2 fill-current text-slate-950" />
                       PRO
                     </span>
+                  </div>
+                  <div class="flex items-center gap-1 mt-0.5">
+                    <span v-if="isSubscribed" class="text-[10px] font-bold text-amber-300">Pro Member</span>
+                    <span v-else class="text-[10px] text-slate-400">Free Tier</span>
                   </div>
                   <p class="text-[11px] text-slate-400 truncate">{{ authUser?.email }}</p>
                 </div>
@@ -458,6 +494,17 @@ const breadcrumbInfo = computed(() => {
 
         <!-- Right: Status Pill & Action Tools -->
         <div class="flex items-center gap-3 sm:gap-4">
+          <!-- Admin Console Header Access for Admins -->
+          <a
+            v-if="isAdmin"
+            href="/admin/dashboard"
+            class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900 hover:bg-slate-800 text-emerald-400 hover:text-emerald-300 border border-emerald-500/40 text-xs font-bold shadow-xs transition-colors"
+            title="Open Platform Admin Console"
+          >
+            <ShieldCheck class="h-3.5 w-3.5 text-emerald-400" />
+            <span>Admin Console</span>
+          </a>
+
           <!-- Live AI Engine Indicator with Reactive activeAiModel -->
           <div class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200/80 text-xs font-medium text-slate-700">
             <span class="relative flex h-2 w-2">
