@@ -1,5 +1,8 @@
 <script setup>
+import { computed, onMounted } from 'vue'
+import { usePage } from '@inertiajs/vue3'
 import { useProposalStore } from '@/stores/proposalStore'
+import { useAuthStore } from '@/stores/authStore'
 import {
   Sparkles,
   Wand2,
@@ -16,9 +19,40 @@ import {
 } from 'lucide-vue-next'
 
 const store = useProposalStore()
+const page = usePage()
+const authStore = useAuthStore()
+
+const currentUser = computed(() => {
+  return page?.props?.auth?.user || authStore.user || null
+})
+
+const isPro = computed(() => {
+  return Boolean(
+    currentUser.value?.is_subscribed ||
+    currentUser.value?.subscription_tier === 'pro' ||
+    currentUser.value?.role === 'admin' ||
+    currentUser.value?.email === 'admin@aiproposals.io' ||
+    store.isSubscribed
+  )
+})
+
+onMounted(() => {
+  if (isPro.value) {
+    store.isSubscribed = true
+    store.activeAiModel = 'Gemini 1.5 Pro'
+  }
+})
 
 function applyPreset(text) {
   store.aiPromptContext = text
+}
+
+const handleGenerateSections = async () => {
+  if (isPro.value) {
+    store.isSubscribed = true
+    store.activeAiModel = 'Gemini 1.5 Pro'
+  }
+  await store.generateFullProposal()
 }
 </script>
 
@@ -140,10 +174,19 @@ function applyPreset(text) {
           <div class="flex items-center gap-2 mb-1.5">
             <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-brand-500/30 text-brand-200 border border-brand-500/40">
               <Zap class="h-3 w-3 text-amber-300" />
-              AI Engine: {{ store.activeAiModel }}
+              AI Engine: {{ isPro ? 'Gemini 1.5 Pro' : store.activeAiModel }}
             </span>
+            <!-- Pro Perks Badge -->
             <span
-              v-if="store.hasReachedLimit"
+              v-if="isPro"
+              class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-slate-950 shadow-xs border border-amber-300"
+            >
+              <Crown class="h-3 w-3 fill-current text-slate-950" />
+              Pro Perks Active (Unlimited)
+            </span>
+            <!-- Free Limit Badge (Only shown to free users who hit limit) -->
+            <span
+              v-else-if="store.hasReachedLimit"
               class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-500/30 text-amber-200 border border-amber-500/40"
             >
               <Crown class="h-3 w-3 text-amber-300" />
@@ -152,7 +195,10 @@ function applyPreset(text) {
           </div>
           <h3 class="text-sm font-bold text-white">Generate Real-Time Sections</h3>
           <p class="text-xs text-slate-300 mt-0.5 max-w-sm">
-            <span v-if="store.hasReachedLimit" class="text-amber-200 font-medium">
+            <span v-if="isPro" class="text-amber-200 font-medium">
+              Gemini 1.5 Pro synthesis unlocked with domain pgvector RAG memory and unlimited proposal drafting.
+            </span>
+            <span v-else-if="store.hasReachedLimit" class="text-amber-200 font-medium">
               Free plan limit reached. Further generation is blocked until you upgrade to Pro.
             </span>
             <span v-else>
@@ -163,10 +209,12 @@ function applyPreset(text) {
 
         <button
           type="button"
-          @click="store.generateFullProposal"
+          @click="handleGenerateSections"
           :disabled="store.isGenerating.full || store.isGenerating.executiveSummary || store.isGenerating.scope"
           :class="[
-            store.hasReachedLimit
+            isPro
+              ? 'bg-gradient-to-r from-amber-400 via-amber-500 to-brand-500 hover:from-amber-300 hover:to-brand-400 text-slate-950 font-black shadow-lg shadow-amber-500/25 ring-2 ring-amber-300/40'
+              : store.hasReachedLimit
               ? 'bg-gradient-to-r from-amber-500 to-brand-600 hover:from-amber-400 hover:to-brand-500 text-white shadow-amber-500/30 ring-2 ring-amber-400/40'
               : 'bg-gradient-to-r from-brand-500 to-indigo-500 hover:from-brand-400 hover:to-indigo-400 text-white shadow-brand-500/40',
             'inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-xs font-bold shadow-lg disabled:opacity-60 disabled:cursor-not-allowed transition-all cursor-pointer'
@@ -174,14 +222,17 @@ function applyPreset(text) {
         >
           <Loader2
             v-if="store.isGenerating.full || store.isGenerating.executiveSummary || store.isGenerating.scope"
-            class="h-4 w-4 animate-spin text-white"
+            class="h-4 w-4 animate-spin text-slate-950"
           />
+          <Sparkles v-else-if="isPro" class="h-4 w-4 text-slate-950 fill-current" />
           <Crown v-else-if="store.hasReachedLimit" class="h-4 w-4 text-amber-200" />
           <Sparkles v-else class="h-4 w-4 text-amber-300" />
           <span>
             {{
               store.isGenerating.full
-                ? 'Synthesizing with AI...'
+                ? 'Synthesizing with Gemini Pro...'
+                : isPro
+                ? '✨ Synthesize Sections with Gemini 1.5 Pro'
                 : store.hasReachedLimit
                 ? 'Upgrade to Pro to Generate'
                 : 'Generate Full Proposal'

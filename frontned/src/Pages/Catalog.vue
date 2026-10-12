@@ -4,7 +4,7 @@ import { useForm, router } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import { useProposalStore } from '@/stores/proposalStore'
 import { useToast } from '@/composables/useToast'
-import { Layers, Plus, Tag, Check, X, Loader2, Trash2 } from 'lucide-vue-next'
+import { Layers, Plus, Tag, Check, X, Loader2, Trash2, Sparkles, Wand2 } from 'lucide-vue-next'
 
 const props = defineProps({
   catalog: {
@@ -16,6 +16,8 @@ const props = defineProps({
 const store = useProposalStore()
 const toast = useToast()
 const isModalOpen = ref(false)
+const aiConceptPrompt = ref('')
+const isAiGenerating = ref(false)
 
 // Sync inertia props with pinia store if provided
 if (props.catalog && props.catalog.length > 0) {
@@ -60,32 +62,108 @@ const categories = [
 
 const unitTypes = ['package', 'sprint', 'hour', 'month', 'milestone', 'seat']
 
+const quickAiPrompts = [
+  'Enterprise Multi-Cloud Failover Pipeline',
+  'Custom Gemini RAG Knowledge Base',
+  'SOC2 Security & Penetration Audit',
+  'High-Throughput GraphQL API Microservices',
+]
+
 function openModal() {
   form.clearErrors()
+  aiConceptPrompt.value = ''
   isModalOpen.value = true
 }
 
 function closeModal() {
   isModalOpen.value = false
   form.reset()
+  aiConceptPrompt.value = ''
 }
 
-function submitCatalogItem() {
-  form.post('/catalog', {
-    preserveScroll: true,
-    onSuccess: (page) => {
+async function generateWithAi(promptText = null) {
+  const query = promptText || aiConceptPrompt.value || form.name
+  if (!query || !query.trim()) {
+    toast.warning('Please enter a service concept or title to generate specs.', 'Input Required')
+    return
+  }
+
+  isAiGenerating.value = true
+  try {
+    const res = await fetch('/api/catalog/ai-generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({ prompt: query }),
+    })
+
+    const data = await res.json()
+    if (res.ok && data.item) {
+      form.name = data.item.name || form.name
+      form.category = data.item.category || form.category
+      form.description = data.item.description || form.description
+      form.unit_price = Number(data.item.unit_price || form.unit_price)
+      form.unit = data.item.unit || form.unit
+      form.default_quantity = Number(data.item.default_quantity || 1)
+      toast.success(`Generated specifications for "${form.name}" using Gemini!`, 'AI Synthesized')
+    } else {
+      toast.error(data.message || 'Failed to auto-generate item.', 'AI Error')
+    }
+  } catch (err) {
+    toast.error('Network error contacting Gemini AI service.', 'Error')
+  } finally {
+    isAiGenerating.value = false
+  }
+}
+
+async function submitCatalogItem() {
+  if (typeof form.post === 'function') {
+    form.post('/catalog', {
+      preserveScroll: true,
+      onSuccess: (page) => {
+        isModalOpen.value = false
+        toast.success(`Catalog item "${form.name}" registered successfully!`, 'Item Created')
+        if (page?.props?.catalog) {
+          store.catalog = page.props.catalog
+        }
+        form.reset()
+      },
+      onError: (errors) => {
+        const firstError = Object.values(errors)[0]
+        toast.error(firstError || 'Please correct the highlighted form errors.', 'Validation Error')
+      },
+    })
+    return
+  }
+
+  // Standalone dev mode fallback
+  try {
+    const res = await fetch('/api/catalog', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify(form.data()),
+    })
+    const data = await res.json()
+    if (res.ok && data.item) {
+      store.catalog.unshift({
+        ...data.item,
+        unitPrice: Number(data.item.unit_price || 0),
+        defaultQuantity: Number(data.item.default_quantity || 1),
+      })
       isModalOpen.value = false
       toast.success(`Catalog item "${form.name}" registered successfully!`, 'Item Created')
-      if (page?.props?.catalog) {
-        store.catalog = page.props.catalog
-      }
       form.reset()
-    },
-    onError: (errors) => {
-      const firstError = Object.values(errors)[0]
-      toast.error(firstError || 'Please correct the highlighted form errors.', 'Validation Error')
-    },
-  })
+    } else {
+      toast.error(data.message || 'Validation error saving catalog item.', 'Validation Error')
+    }
+  } catch (err) {
+    toast.error('Network error saving catalog item.', 'Error')
+  }
 }
 
 function deleteItem(id, name) {
@@ -191,6 +269,55 @@ function deleteItem(id, name) {
           </div>
 
           <form @submit.prevent="submitCatalogItem" class="space-y-4">
+            <!-- AI Auto-Generation Banner & Trigger (Powered by Gemini) -->
+            <div class="p-3.5 rounded-xl bg-gradient-to-r from-brand-900/95 via-indigo-950 to-slate-900 text-white border border-brand-500/30 space-y-2.5 shadow-sm">
+              <div class="flex items-center justify-between">
+                <span class="inline-flex items-center gap-1.5 text-xs font-bold text-brand-300">
+                  <Sparkles class="h-3.5 w-3.5 text-amber-400" />
+                  Gemini AI Auto-Generator
+                </span>
+                <span class="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-brand-500/30 text-brand-200">
+                  Automated Pricing & Scope
+                </span>
+              </div>
+              <p class="text-[11px] text-slate-300 leading-relaxed">
+                Type an enterprise service concept or choose a quick prompt to auto-generate the complete B2B scope, category, and standard Philippine Peso (₱) pricing.
+              </p>
+
+              <div class="flex gap-2">
+                <input
+                  v-model="aiConceptPrompt"
+                  type="text"
+                  placeholder="e.g. Turnkey LLM RAG Pipeline, Cloud SOC2 Audit..."
+                  @keydown.enter.prevent="generateWithAi()"
+                  class="flex-1 px-3 py-1.5 rounded-lg bg-slate-950/80 border border-slate-700 text-xs text-white placeholder-slate-400 focus:outline-hidden focus:ring-1 focus:ring-brand-400"
+                />
+                <button
+                  type="button"
+                  @click="generateWithAi()"
+                  :disabled="isAiGenerating"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-brand-500 to-indigo-500 hover:from-brand-400 hover:to-indigo-400 text-white font-bold text-xs transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                >
+                  <Loader2 v-if="isAiGenerating" class="h-3.5 w-3.5 animate-spin" />
+                  <Wand2 v-else class="h-3.5 w-3.5 text-amber-300" />
+                  <span>{{ isAiGenerating ? 'Synthesizing...' : 'Generate with AI' }}</span>
+                </button>
+              </div>
+
+              <!-- Quick Concept Chips -->
+              <div class="flex flex-wrap gap-1 pt-0.5">
+                <button
+                  v-for="chip in quickAiPrompts"
+                  :key="chip"
+                  type="button"
+                  @click="generateWithAi(chip)"
+                  class="text-[10px] px-2 py-0.5 rounded bg-slate-800/80 hover:bg-brand-600/50 hover:text-white text-slate-300 transition-colors border border-slate-700/60 cursor-pointer"
+                >
+                  + {{ chip }}
+                </button>
+              </div>
+            </div>
+
             <div>
               <label class="block text-xs font-semibold text-slate-700 mb-1">Deliverable / Package Name *</label>
               <input

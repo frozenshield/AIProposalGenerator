@@ -19,6 +19,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('/webhooks/paymongo', [PayMongoWebhookController::class, 'handle'])->name('api.webhooks.paymongo');
 Route::post('/subscription/checkout', [SubscriptionController::class, 'checkout'])->name('api.subscription.checkout');
+Route::post('/catalog/ai-generate', [\App\Http\Controllers\CatalogController::class, 'aiGenerate']);
+Route::post('/catalog', [\App\Http\Controllers\CatalogController::class, 'store']);
+Route::post('/clients', [\App\Http\Controllers\ClientController::class, 'store']);
 
 // Admin API endpoints
 use App\Http\Controllers\Admin\AdminController;

@@ -47,6 +47,21 @@ const displayedClients = computed(() => {
   return props.clients && props.clients.length > 0 ? props.clients : store.clients
 })
 
+const defaultCartoonAvatars = [
+  { id: 'ava-1', name: 'Aria Exec', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aria&backgroundColor=ffd5dc' },
+  { id: 'bot-1', name: 'Cyber Arch', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=Archie&backgroundColor=b6e3f4' },
+  { id: 'adv-1', name: 'Felix Scout', url: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Felix&backgroundColor=c0aede' },
+  { id: 'ava-2', name: 'Oliver Lead', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Oliver&backgroundColor=c0aede' },
+  { id: 'bot-2', name: 'Gizmo AI', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=Gizmo&backgroundColor=d1d4f9' },
+  { id: 'adv-2', name: 'Zack Tech', url: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Zack&backgroundColor=ffdfbf' },
+  { id: 'ava-3', name: 'Leo CTO', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Leo&backgroundColor=d1d4f9' },
+  { id: 'bot-3', name: 'Sparky SRE', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=Sparky&backgroundColor=ffd5dc' },
+  { id: 'adv-3', name: 'Luna Dev', url: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Luna&backgroundColor=b6e3f4' },
+  { id: 'adv-4', name: 'Aneka VP', url: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Aneka&backgroundColor=ffdfbf' },
+  { id: 'ava-4', name: 'Milo Ops', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Milo&backgroundColor=c0aede' },
+  { id: 'bot-4', name: 'Kiki Sec', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=Kiki&backgroundColor=b6e3f4' },
+]
+
 // Inertia useForm setup for Client creation
 const form = useForm({
   name: '',
@@ -55,11 +70,21 @@ const form = useForm({
   email: '',
   phone: '+63 9',
   industry: 'Technology & Cloud Solutions',
+  avatar: defaultCartoonAvatars[0].url,
   address: 'BGC, Taguig City, Metro Manila',
 })
 
+const isCustomAvatar = ref(false)
+
+function selectCartoonAvatar(url) {
+  form.avatar = url
+}
+
 function openModal() {
   form.clearErrors()
+  if (!form.avatar) {
+    form.avatar = defaultCartoonAvatars[0].url
+  }
   isModalOpen.value = true
 }
 
@@ -68,22 +93,48 @@ function closeModal() {
   form.reset()
 }
 
-function submitClient() {
-  form.post('/clients', {
-    preserveScroll: true,
-    onSuccess: (page) => {
+async function submitClient() {
+  if (typeof form.post === 'function') {
+    form.post('/clients', {
+      preserveScroll: true,
+      onSuccess: (page) => {
+        isModalOpen.value = false
+        toast.success(`Client ${form.company} added successfully!`, 'Client Saved')
+        if (page?.props?.clients) {
+          store.clients = page.props.clients
+        }
+        form.reset()
+      },
+      onError: (errors) => {
+        const firstError = Object.values(errors)[0]
+        toast.error(firstError || 'Please correct the highlighted errors.', 'Validation Error')
+      },
+    })
+    return
+  }
+
+  // Standalone dev mode fallback
+  try {
+    const res = await fetch('/api/clients', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify(form.data()),
+    })
+    const data = await res.json()
+    if (res.ok && data.client) {
+      store.clients.unshift(data.client)
       isModalOpen.value = false
       toast.success(`Client ${form.company} added successfully!`, 'Client Saved')
-      if (page?.props?.clients) {
-        store.clients = page.props.clients
-      }
       form.reset()
-    },
-    onError: (errors) => {
-      const firstError = Object.values(errors)[0]
-      toast.error(firstError || 'Please correct the highlighted errors.', 'Validation Error')
-    },
-  })
+    } else {
+      toast.error(data.message || 'Validation error saving client.', 'Validation Error')
+    }
+  } catch (e) {
+    toast.error('Network error saving client.', 'Error')
+  }
 }
 
 function deleteClient(id, name) {
@@ -206,6 +257,66 @@ function deleteClient(id, name) {
           </div>
 
           <form @submit.prevent="submitClient" class="space-y-4">
+            <!-- Avatar Selection with Cartoon Avatars -->
+            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/90 space-y-2.5">
+              <div class="flex items-center justify-between">
+                <label class="block text-xs font-semibold text-slate-800">
+                  Client Avatar (Select Cartoon Persona)
+                </label>
+                <button
+                  type="button"
+                  @click="isCustomAvatar = !isCustomAvatar"
+                  class="text-[11px] text-brand-600 hover:text-brand-700 font-medium cursor-pointer"
+                >
+                  {{ isCustomAvatar ? 'Choose from Cartoon presets' : 'Enter custom URL' }}
+                </button>
+              </div>
+
+              <!-- Selected avatar preview & Cartoon Grid -->
+              <div v-if="!isCustomAvatar" class="space-y-2">
+                <div class="flex items-center gap-3">
+                  <div class="relative h-12 w-12 rounded-xl ring-2 ring-brand-500 overflow-hidden flex-shrink-0 bg-white shadow-xs">
+                    <img :src="form.avatar" alt="Selected Avatar" class="h-full w-full object-cover" />
+                  </div>
+                  <div>
+                    <span class="text-xs font-bold text-slate-800 block">Default Cartoon Avatars</span>
+                    <span class="text-[11px] text-slate-500">Click any avatar below to assign to this client</span>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-6 gap-2 pt-1">
+                  <button
+                    v-for="avatar in defaultCartoonAvatars"
+                    :key="avatar.id"
+                    type="button"
+                    @click="selectCartoonAvatar(avatar.url)"
+                    class="relative h-10 w-10 rounded-xl overflow-hidden p-0.5 border-2 transition-all cursor-pointer hover:scale-105"
+                    :class="form.avatar === avatar.url ? 'border-brand-600 ring-2 ring-brand-500/30' : 'border-slate-200 hover:border-slate-300'"
+                    :title="avatar.name"
+                  >
+                    <img :src="avatar.url" :alt="avatar.name" class="h-full w-full object-cover rounded-lg" />
+                    <span
+                      v-if="form.avatar === avatar.url"
+                      class="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-brand-600 ring-1 ring-white flex items-center justify-center text-white text-[8px] font-bold"
+                    >
+                      ✓
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Custom URL Input fallback -->
+              <div v-else class="space-y-1.5">
+                <input
+                  v-model="form.avatar"
+                  type="url"
+                  placeholder="https://example.com/avatar.png"
+                  class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-brand-500"
+                />
+                <p class="text-[11px] text-slate-400">Direct image link (.png, .jpg, .svg)</p>
+              </div>
+            </div>
+
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">Contact Name *</label>

@@ -51,13 +51,12 @@ Route::middleware('auth')->group(function () {
     // Clients Management
     Route::get('/clients', [ClientController::class, 'index'])->name('clients.index');
     Route::post('/clients', [ClientController::class, 'store'])->name('clients.store');
-    Route::post('/api/clients', [ClientController::class, 'store']);
     Route::delete('/clients/{client}', [ClientController::class, 'destroy'])->name('clients.destroy');
 
     // Deliverables Catalog
     Route::get('/catalog', [CatalogController::class, 'index'])->name('catalog.index');
     Route::post('/catalog', [CatalogController::class, 'store'])->name('catalog.store');
-    Route::post('/api/catalog', [CatalogController::class, 'store']);
+    Route::post('/catalog/ai-generate', [CatalogController::class, 'aiGenerate'])->name('catalog.ai-generate');
     Route::delete('/catalog/{catalogItem}', [CatalogController::class, 'destroy'])->name('catalog.destroy');
 
     // AI Proposals Workflow

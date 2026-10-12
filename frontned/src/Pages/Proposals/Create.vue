@@ -1,5 +1,7 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { usePage } from '@inertiajs/vue3'
+import { useAuthStore } from '@/stores/authStore'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import { useProposalStore } from '@/stores/proposalStore'
 import ClientStep from '@/Components/Steps/ClientStep.vue'
@@ -20,6 +22,15 @@ import {
 } from 'lucide-vue-next'
 
 const store = useProposalStore()
+const page = usePage()
+const authStore = useAuthStore()
+
+onMounted(() => {
+  const u = page?.props?.auth?.user || authStore.user
+  if (u) {
+    store.syncUser(u)
+  }
+})
 
 // Mobile view tab toggle: 'form' or 'preview'
 const mobileActiveTab = ref('form')

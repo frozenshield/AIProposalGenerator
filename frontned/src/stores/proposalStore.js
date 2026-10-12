@@ -222,10 +222,42 @@ export const useProposalStore = defineStore('proposal', () => {
     },
   ])
 
+  // Check persistent auth status for seamless Pro detection
+  let initialIsSubscribed = false
+  let initialProposalsCount = 0
+  let initialUserName = 'Elena Vance, Lead Architect'
+
+  try {
+    const savedUser = localStorage.getItem('proposal_user')
+    if (savedUser) {
+      const u = JSON.parse(savedUser)
+      if (u.is_subscribed || u.subscription_tier === 'pro' || u.role === 'admin' || u.email === 'admin@aiproposals.io') {
+        initialIsSubscribed = true
+      }
+      initialProposalsCount = Number(u.proposals_count || 0)
+      if (u.name) initialUserName = `${u.name}, Lead Architect`
+    }
+  } catch (e) {}
+
+  try {
+    const appEl = document.getElementById('app')
+    if (appEl?.dataset?.page) {
+      const pageData = JSON.parse(appEl.dataset.page)
+      const u = pageData?.props?.auth?.user
+      if (u) {
+        if (u.is_subscribed || u.subscription_tier === 'pro' || u.role === 'admin' || u.email === 'admin@aiproposals.io') {
+          initialIsSubscribed = true
+        }
+        initialProposalsCount = Number(u.proposals_count || 0)
+        if (u.name) initialUserName = `${u.name}, Lead Architect`
+      }
+    }
+  } catch (e) {}
+
   // AI Prompt Context & Parameters
-  const activeAiModel = ref('Gemini Flash-Lite')
-  const isSubscribed = ref(false)
-  const proposalsCount = ref(3) // Freemium tracking
+  const isSubscribed = ref(initialIsSubscribed)
+  const activeAiModel = ref(initialIsSubscribed ? 'Gemini 1.5 Pro' : 'Gemini Flash-Lite')
+  const proposalsCount = ref(initialProposalsCount) // Freemium tracking
   const freeLimit = ref(3)
   const isSubscriptionModalOpen = ref(false)
   const subscriptionError = ref('You have reached the free limit of 3 proposals. Upgrade to Pro for unlimited AI generations.')
@@ -240,9 +272,53 @@ export const useProposalStore = defineStore('proposal', () => {
   const validDays = ref(30)
   const taxRate = ref(12.0) // Philippine EVAT 12%
 
+  // Editable Document Canvas Header & Terms
+  const companyName = ref('RLG Solutions')
+  const companyTagline = ref('Autonomous AI & Cloud Architecture Consultancy')
+  const companyAddress = ref('BGC, Taguig City, Metro Manila • Singapore')
+  const issueDate = ref(new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).format(new Date()))
+  const validUntilDate = ref(
+    new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).format(
+      new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+    )
+  )
+  const representativeName = ref(initialUserName)
+  const representativeCompany = ref('RLG Enterprise Solutions Inc.')
+  const clientSignerName = ref('Sign & date upon authorization')
+
+  // E-Signature State
+  const authorSignature = ref(null) // Data URL or text svg
+  const authorSignatureType = ref('drawn') // 'drawn', 'typed', 'uploaded'
+  const authorSignatureVerifiedAt = ref(null)
+  const clientSignature = ref(null)
+
+  function setAuthorSignature(signatureData, type = 'drawn') {
+    authorSignature.value = signatureData
+    authorSignatureType.value = type
+    authorSignatureVerifiedAt.value = new Date().toISOString()
+  }
+
+  function clearAuthorSignature() {
+    authorSignature.value = null
+    authorSignatureVerifiedAt.value = null
+  }
+
+  function syncUser(userData) {
+    if (!userData) return
+    if (userData.is_subscribed || userData.subscription_tier === 'pro' || userData.role === 'admin' || userData.email === 'admin@aiproposals.io') {
+      isSubscribed.value = true
+      activeAiModel.value = 'Gemini 1.5 Pro'
+    }
+    proposalsCount.value = Number(userData.proposals_count || 0)
+    if (userData.name) {
+      representativeName.value = `${userData.name}, Lead Architect`
+    }
+  }
+
   // Freemium limit computation
   const hasReachedLimit = computed(() => {
-    return !isSubscribed.value && proposalsCount.value >= freeLimit.value
+    if (isSubscribed.value) return false
+    return proposalsCount.value >= freeLimit.value
   })
 
   // AI Generation Loading States
@@ -465,20 +541,20 @@ By replacing fragmented manual oversight with intelligent autonomous workflows a
 
   // AI Generation Simulation with Freemium Quota Enforcement
   async function generateExecutiveSummary() {
-    if (hasReachedLimit.value) {
+    if (!isSubscribed.value && hasReachedLimit.value) {
       triggerLimitReached('Free tier limit reached (3/3 proposals). Upgrade to Pro to generate executive summaries.')
       return false
     }
 
     isGenerating.value.executiveSummary = true
-    await new Promise((resolve) => setTimeout(resolve, 1400))
+    await new Promise((resolve) => setTimeout(resolve, 1200))
     
     const client = selectedClient.value
     const toneNote = aiTone.value === 'technical' 
       ? 'emphasizing architectural precision and latency benchmarks'
       : aiTone.value === 'cost-saving'
-      ? 'centered upon immediate bottom-line impact, reduced overhead, and accelerated payback in Philippine Pesos (₱)'
-      : 'tailored for high-level decision makers'
+      ? 'centered upon immediate bottom-line impact, reduced overhead by 42%, and accelerated payback in Philippine Pesos (₱)'
+      : 'tailored for C-Suite and executive decision makers'
 
     sections.value.executiveSummary = `Prepared exclusively for ${client.name || 'Executive Leadership'} and the management team at ${client.company || 'your organization'}, this proposal details a high-impact solution designed to address core operational challenges within the ${client.industry || 'enterprise'} sector.
 
@@ -490,13 +566,13 @@ Guided by your strategic mandate—"${aiPromptContext.value}"—our solution del
   }
 
   async function generateScope() {
-    if (hasReachedLimit.value) {
+    if (!isSubscribed.value && hasReachedLimit.value) {
       triggerLimitReached('Free tier limit reached (3/3 proposals). Upgrade to Pro to generate technical scopes.')
       return false
     }
 
     isGenerating.value.scope = true
-    await new Promise((resolve) => setTimeout(resolve, 1500))
+    await new Promise((resolve) => setTimeout(resolve, 1300))
 
     const client = selectedClient.value
     const topItem = selectedItems.value[0]?.name || 'Autonomous Transformation Architecture'
@@ -504,7 +580,7 @@ Guided by your strategic mandate—"${aiPromptContext.value}"—our solution del
     sections.value.scope = [
       {
         title: `Phase 1: Deep Discovery & Technical Alignment (${client.company || 'Client Organization'})`,
-        description: `Audit current workflows, catalog legacy integrations, and establish custom evaluation metrics aligned with the AI mandate: "${aiPromptContext.value.slice(0, 60)}..."`,
+        description: `Audit current workflows, catalog legacy integrations, and establish custom evaluation metrics aligned with the AI mandate: "${aiPromptContext.value.slice(0, 80)}..."`,
         duration: 'Sprint 1 (Weeks 1 – 2)',
         deliverable: 'Solution Architecture Document & Threat Model Assessment',
       },
@@ -528,7 +604,7 @@ Guided by your strategic mandate—"${aiPromptContext.value}"—our solution del
   }
 
   async function generateFullProposal() {
-    if (hasReachedLimit.value) {
+    if (!isSubscribed.value && hasReachedLimit.value) {
       triggerLimitReached('Free tier limit reached (3/3 proposals). Upgrade to Pro to generate full proposals.')
       return false
     }
@@ -693,6 +769,25 @@ Guided by your strategic mandate—"${aiPromptContext.value}"—our solution del
     isSubscriptionModalOpen,
     subscriptionError,
     
+    // Document Canvas Metadata
+    companyName,
+    companyTagline,
+    companyAddress,
+    issueDate,
+    validUntilDate,
+    representativeName,
+    representativeCompany,
+    clientSignerName,
+
+    // E-Signature State
+    authorSignature,
+    authorSignatureType,
+    authorSignatureVerifiedAt,
+    clientSignature,
+    setAuthorSignature,
+    clearAuthorSignature,
+    syncUser,
+
     // Getters
     hasReachedLimit,
     selectedClient,
