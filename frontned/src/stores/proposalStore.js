@@ -20,111 +20,11 @@ export const useProposalStore = defineStore('proposal', () => {
     })}`
   }
 
-  // Database-backed Clients Directory (Initialized with Philippine & Global defaults, synced from DB)
-  const clients = ref([
-    {
-      id: 1,
-      name: 'Sarah Jenkins',
-      company: 'Apex Retail Solutions Philippines',
-      role: 'Chief Technology Officer',
-      email: 's.jenkins@apexretail.ph',
-      phone: '+63 (2) 8876-5432',
-      industry: 'E-Commerce & Retail',
-      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-      address: 'Ayala Tower One, Ayala Avenue, Makati City, Metro Manila',
-    },
-    {
-      id: 2,
-      name: 'David Chen',
-      company: 'OmniHealth Technologies Asia',
-      role: 'VP of Digital Transformation',
-      email: 'd.chen@omnihealth.asia',
-      phone: '+63 (2) 8654-3210',
-      industry: 'Healthcare & Biotech',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-      address: 'High Street South Corporate Plaza, BGC, Taguig City',
-    },
-    {
-      id: 3,
-      name: 'Elena Rostova',
-      company: 'FinVanguard Global Capital',
-      role: 'Director of Strategic Ops',
-      email: 'elena.r@finvanguard.com',
-      phone: '+63 (2) 8912-3456',
-      industry: 'Financial Services & FinTech',
-      avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
-      address: 'The Podium West Tower, ADB Avenue, Ortigas Center, Pasig City',
-    },
-    {
-      id: 4,
-      name: 'Marcus Sterling',
-      company: 'LogiFlow Supply Chain Corp',
-      role: 'Chief Operating Officer',
-      email: 'msterling@logiflow.net',
-      phone: '+63 (32) 412-8890',
-      industry: 'Supply Chain & Logistics',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
-      address: 'Cebu IT Park, Lahug, Cebu City, Cebu',
-    },
-  ])
+  // Database-backed Clients Directory (Scoped to authenticated tenant)
+  const clients = ref([])
 
-  // Database-backed Master Service & Deliverables Catalog (Quoted in Philippine Pesos ₱)
-  const catalog = ref([
-    {
-      id: 1,
-      name: 'AI Automated Workflow Engine',
-      description: 'End-to-end autonomous agent workflow pipeline integration with existing ERP/CRM, handling automated approvals and business logic.',
-      category: 'Artificial Intelligence',
-      unitPrice: 125000,
-      unit: 'Deployment',
-      defaultQuantity: 1,
-    },
-    {
-      id: 2,
-      name: 'Enterprise Cloud Modernization',
-      description: 'Zero-downtime microservices containerization, multi-cloud failover, database optimization, and high availability setup.',
-      category: 'Cloud Architecture',
-      unitPrice: 180000,
-      unit: 'Phase',
-      defaultQuantity: 1,
-    },
-    {
-      id: 3,
-      name: 'Custom Domain LLM Fine-Tuning',
-      description: 'Proprietary dataset ingestion, safety evaluation guardrails, localized business context, and private cloud deployment.',
-      category: 'Machine Learning',
-      unitPrice: 95000,
-      unit: 'Model Package',
-      defaultQuantity: 1,
-    },
-    {
-      id: 4,
-      name: 'Security & Compliance Audit Suite',
-      description: 'SOC2 Type II, NPC DPA 2012, and ISO 27001 automated threat vector inspection, vulnerability remediation, and compliance sign-off.',
-      category: 'Cybersecurity',
-      unitPrice: 62000,
-      unit: 'Audit Report',
-      defaultQuantity: 1,
-    },
-    {
-      id: 5,
-      name: 'Next-Gen UX/UI Product Redesign',
-      description: 'Human-centric responsive design system, WCAG AA accessibility, interactive Figma prototypes, and Tailwind CSS components.',
-      category: 'Product Design',
-      unitPrice: 78000,
-      unit: 'Sprint (2 Wks)',
-      defaultQuantity: 2,
-    },
-    {
-      id: 6,
-      name: '24/7 Dedicated Support SLA & SRE',
-      description: '15-minute response guarantee, continuous health telemetry, Philippine business hours coverage, and dedicated solutions architect.',
-      category: 'Managed Services',
-      unitPrice: 24000,
-      unit: 'Month',
-      defaultQuantity: 3,
-    },
-  ])
+  // Database-backed Master Service & Deliverables Catalog (Scoped to authenticated tenant)
+  const catalog = ref([])
 
   // Database-backed Reference Options: AI Strategic Angles (Prompt Presets)
   const promptPresets = ref([
@@ -187,40 +87,9 @@ export const useProposalStore = defineStore('proposal', () => {
   ])
 
   // Selected Proposal Configuration
-  const selectedClientId = ref(1)
+  const selectedClientId = ref(null)
   
-  const selectedItems = ref([
-    {
-      id: 'item-1',
-      catalogId: 1,
-      name: 'AI Automated Workflow Engine',
-      description: 'End-to-end autonomous agent workflow pipeline integration with existing ERP/CRM, handling automated approvals and business logic.',
-      category: 'Artificial Intelligence',
-      unitPrice: 125000,
-      quantity: 1,
-      discount: 10, // 10%
-    },
-    {
-      id: 'item-2',
-      catalogId: 2,
-      name: 'Enterprise Cloud Modernization',
-      description: 'Zero-downtime microservices containerization, multi-cloud failover, database optimization, and high availability setup.',
-      category: 'Cloud Architecture',
-      unitPrice: 180000,
-      quantity: 1,
-      discount: 5, // 5%
-    },
-    {
-      id: 'item-3',
-      catalogId: 6,
-      name: '24/7 Dedicated Support SLA & SRE',
-      description: '15-minute response guarantee, continuous health telemetry, Philippine business hours coverage, and dedicated solutions architect.',
-      category: 'Managed Services',
-      unitPrice: 24000,
-      quantity: 3,
-      discount: 0,
-    },
-  ])
+  const selectedItems = ref([])
 
   // Check persistent auth status for seamless Pro detection
   let initialIsSubscribed = false
@@ -457,6 +326,38 @@ By replacing fragmented manual oversight with intelligent autonomous workflows a
     } catch (e) {
       // Graceful fallback to initial values if network/server is unavailable
     }
+  }
+
+  async function fetchClients() {
+    try {
+      const res = await fetch('/api/clients', {
+        headers: { 'Accept': 'application/json' },
+      })
+      if (res.ok) {
+        const data = await res.json()
+        if (Array.isArray(data.clients)) {
+          clients.value = data.clients
+        }
+      }
+    } catch (e) {}
+  }
+
+  async function fetchCatalog() {
+    try {
+      const res = await fetch('/api/catalog', {
+        headers: { 'Accept': 'application/json' },
+      })
+      if (res.ok) {
+        const data = await res.json()
+        if (Array.isArray(data.catalog)) {
+          catalog.value = data.catalog.map(i => ({
+            ...i,
+            unitPrice: Number(i.unit_price || i.unitPrice || 0),
+            defaultQuantity: Number(i.default_quantity || i.defaultQuantity || 1),
+          }))
+        }
+      }
+    } catch (e) {}
   }
 
   // Auto-fetch on setup
@@ -801,6 +702,8 @@ Guided by your strategic mandate—"${aiPromptContext.value}"—our solution del
     // Actions
     formatCurrency,
     fetchReferences,
+    fetchClients,
+    fetchCatalog,
     setStep,
     nextStep,
     prevStep,

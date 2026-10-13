@@ -19,10 +19,10 @@ class CatalogController extends Controller
     {
         $user = $request->user();
 
-        // Retrieve items owned by tenant or global catalog templates
+        // Retrieve items strictly owned by the authenticated tenant
         $catalog = $user
-            ? CatalogItem::where('user_id', $user->id)->orWhereNull('user_id')->orderBy('category')->get()
-            : CatalogItem::orderBy('category')->get();
+            ? $user->catalogItems()->orderBy('category')->get()
+            : collect([]);
 
         if ($request->wantsJson() || $request->is('api/*')) {
             return response()->json([
@@ -52,9 +52,17 @@ class CatalogController extends Controller
 
         $user = $request->user();
 
-        $item = $user
-            ? $user->catalogItems()->create($validated)
-            : CatalogItem::create($validated);
+        if (! $user) {
+            if ($request->wantsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Authentication required to create a catalog deliverable.',
+                ], 401);
+            }
+            return redirect()->guest('/login');
+        }
+
+        $item = $user->catalogItems()->create($validated);
 
         if ($request->wantsJson() || $request->is('api/*')) {
             return response()->json([
@@ -74,7 +82,13 @@ class CatalogController extends Controller
     {
         $user = $request->user();
 
-        if ($user && $catalogItem->user_id && $catalogItem->user_id !== $user->id) {
+        if (! $user || $catalogItem->user_id !== $user->id) {
+            if ($request->wantsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized access to catalog deliverable.',
+                ], 403);
+            }
             abort(403, 'Unauthorized access to catalog item.');
         }
 

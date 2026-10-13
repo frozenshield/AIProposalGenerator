@@ -20,19 +20,19 @@ class DashboardController extends Controller
 
         $activeProposalsCount = $user
             ? $user->proposals()->whereIn('status', [Proposal::STATUS_DRAFT, Proposal::STATUS_SENT])->count()
-            : Proposal::whereIn('status', [Proposal::STATUS_DRAFT, Proposal::STATUS_SENT])->count();
+            : 0;
 
         $totalWinValue = $user
             ? (float) $user->proposals()->where('status', Proposal::STATUS_WON)->sum('grand_total')
-            : (float) Proposal::where('status', Proposal::STATUS_WON)->sum('grand_total');
+            : 0.0;
 
         $clientAccountsCount = $user
             ? $user->clients()->count()
-            : 4;
+            : 0;
 
         $recentProposals = $user
             ? $user->proposals()->with('client')->latest()->take(5)->get()
-            : Proposal::with('client')->latest()->take(5)->get();
+            : collect([]);
 
         $paymentSuccess = false;
         if ($request->query('payment') === 'success') {

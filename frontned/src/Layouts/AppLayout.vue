@@ -97,7 +97,29 @@ const handleLogout = async () => {
   window.location.href = '/login'
 }
 
-const navigationItems = [
+const clientsCount = computed(() => {
+  if (Array.isArray(store.clients) && store.clients.length > 0) {
+    return store.clients.length
+  }
+  const propCount = page?.props?.counts?.clients ?? page?.props?.auth?.user?.clients_count
+  if (propCount !== undefined && propCount !== null) {
+    return Number(propCount)
+  }
+  return store.clients?.length || 0
+})
+
+const catalogCount = computed(() => {
+  if (Array.isArray(store.catalog) && store.catalog.length > 0) {
+    return store.catalog.length
+  }
+  const propCount = page?.props?.counts?.catalog ?? page?.props?.auth?.user?.catalog_count
+  if (propCount !== undefined && propCount !== null) {
+    return Number(propCount)
+  }
+  return store.catalog?.length || 0
+})
+
+const navigationItems = computed(() => [
   {
     name: 'Dashboard',
     href: '/dashboard',
@@ -108,13 +130,13 @@ const navigationItems = [
     name: 'Clients',
     href: '/clients',
     icon: Users,
-    badge: '4 Active',
+    badge: `${clientsCount.value} Active`,
   },
   {
     name: 'Catalog',
     href: '/catalog',
     icon: Layers,
-    badge: '6 Items',
+    badge: `${catalogCount.value} ${catalogCount.value === 1 ? 'Item' : 'Items'}`,
   },
   {
     name: 'Proposals',
@@ -123,7 +145,12 @@ const navigationItems = [
     badge: 'New',
     highlightBadge: true,
   },
-]
+])
+
+onMounted(() => {
+  store.fetchClients()
+  store.fetchCatalog()
+})
 
 const breadcrumbInfo = computed(() => {
   if (props.currentRoute === 'Create Proposal' || props.subRoute === 'Create') {

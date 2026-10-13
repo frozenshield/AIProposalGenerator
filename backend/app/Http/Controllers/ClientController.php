@@ -19,9 +19,10 @@ class ClientController extends Controller
     {
         $user = $request->user();
 
+        // Strict tenant isolation: only return clients owned by the authenticated tenant
         $clients = $user
             ? $user->clients()->latest()->get()
-            : Client::latest()->get();
+            : collect([]);
 
         if ($request->wantsJson() || $request->is('api/*')) {
             return response()->json([
@@ -53,9 +54,17 @@ class ClientController extends Controller
 
         $user = $request->user();
 
-        $client = $user
-            ? $user->clients()->create($validated)
-            : Client::create($validated);
+        if (! $user) {
+            if ($request->wantsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Authentication required to create a client account.',
+                ], 401);
+            }
+            return redirect()->guest('/login');
+        }
+
+        $client = $user->clients()->create($validated);
 
         if ($request->wantsJson() || $request->is('api/*')) {
             return response()->json([
@@ -75,7 +84,13 @@ class ClientController extends Controller
     {
         $user = $request->user();
 
-        if ($user && $client->user_id && $client->user_id !== $user->id) {
+        if (! $user || $client->user_id !== $user->id) {
+            if ($request->wantsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized access to client record.',
+                ], 403);
+            }
             abort(403, 'Unauthorized access to client record.');
         }
 
