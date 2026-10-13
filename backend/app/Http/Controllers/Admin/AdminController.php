@@ -124,7 +124,7 @@ class AdminController extends Controller
             'id',
             'name',
             'email',
-            'role',
+            'ref_role',
             'is_subscribed',
             'subscription_tier',
             'proposals_count',

@@ -27,11 +27,11 @@ const currentUser = computed(() => {
 })
 
 const isPro = computed(() => {
+  const role = currentUser.value?.ref_role || currentUser.value?.role
   return Boolean(
     currentUser.value?.is_subscribed ||
     currentUser.value?.subscription_tier === 'pro' ||
-    currentUser.value?.role === 'admin' ||
-    currentUser.value?.email === 'admin@aiproposals.io' ||
+    role === 'admin' ||
     store.isSubscribed
   )
 })

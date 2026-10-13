@@ -56,21 +56,18 @@ const authUser = computed(() => {
 const isAuthenticated = computed(() => !!authUser.value)
 
 const isAdmin = computed(() => {
-  return Boolean(
-    authUser.value?.role === 'admin' ||
-    authUser.value?.is_admin === true ||
-    authUser.value?.email === 'admin@aiproposals.io'
-  )
+  const role = authUser.value?.ref_role || authUser.value?.role
+  return role === 'admin'
 })
 
 // Phase 4: Pro User Interface check (active when is_subscribed, tier is pro, admin, or store is subscribed)
 const isSubscribed = computed(() => {
   const user = page?.props?.auth?.user || authUser.value
+  const role = user?.ref_role || user?.role
   return Boolean(
     user?.is_subscribed === true ||
     user?.subscription_tier === 'pro' ||
-    user?.role === 'admin' ||
-    user?.email === 'admin@aiproposals.io' ||
+    role === 'admin' ||
     store.isSubscribed === true
   )
 })

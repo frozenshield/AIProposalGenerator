@@ -25,7 +25,8 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       if (userData) {
         localStorage.setItem('proposal_user', JSON.stringify(userData))
-        if (userData.is_subscribed || userData.subscription_tier === 'pro' || userData.role === 'admin') {
+        const role = userData.ref_role || userData.role
+        if (userData.is_subscribed || userData.subscription_tier === 'pro' || role === 'admin') {
           const store = useProposalStore()
           store.isSubscribed = true
           store.activeAiModel = 'Gemini 1.5 Pro'
@@ -73,8 +74,9 @@ export const useAuthStore = defineStore('auth', () => {
       if (email === 'admin@aiproposals.io' && password === 'password123') {
         const demoUser = {
           id: 1,
-          name: 'Lead Solutions Architect',
+          name: 'System Administrator',
           email: 'admin@aiproposals.io',
+          ref_role: 'admin',
           role: 'admin',
           proposals_count: 0,
           is_subscribed: true,
@@ -139,8 +141,11 @@ export const useAuthStore = defineStore('auth', () => {
         id: Date.now(),
         name,
         email,
+        ref_role: 'user',
+        role: 'user',
         proposals_count: 0,
         is_subscribed: false,
+        subscription_tier: 'free',
       }
       setUser(newUser)
       toast.success(`Workspace created for ${name}!`, 'Workspace Ready')

@@ -654,7 +654,7 @@ const formatTokens = (val) => {
                   <div class="flex items-center gap-3">
                     <div
                       class="h-8 w-8 rounded-full flex items-center justify-center font-bold text-xs ring-2"
-                      :class="user.is_subscribed || user.subscription_tier === 'pro' || user.role === 'admin' ? 'ring-amber-400/80 bg-amber-500/20 text-amber-300' : 'ring-slate-700 bg-slate-800 text-slate-300'"
+                      :class="user.is_subscribed || user.subscription_tier === 'pro' || user.ref_role === 'admin' || user.role === 'admin' ? 'ring-amber-400/80 bg-amber-500/20 text-amber-300' : 'ring-slate-700 bg-slate-800 text-slate-300'"
                     >
                       {{ user.name ? user.name.substring(0, 2).toUpperCase() : 'U' }}
                     </div>
@@ -663,7 +663,7 @@ const formatTokens = (val) => {
                         <span class="font-bold text-white text-sm">{{ user.name }}</span>
                         <!-- Pro User Badge in table -->
                         <span
-                          v-if="user.is_subscribed || user.subscription_tier === 'pro' || user.role === 'admin'"
+                          v-if="user.is_subscribed || user.subscription_tier === 'pro' || user.ref_role === 'admin' || user.role === 'admin'"
                           class="px-1.5 py-0.5 rounded-sm bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-black text-[9px] uppercase tracking-wider inline-flex items-center gap-0.5"
                         >
                           <Crown class="h-2.5 w-2.5" />
@@ -678,17 +678,17 @@ const formatTokens = (val) => {
                 <!-- Role -->
                 <td class="px-6 py-4">
                   <span
-                    :class="user.role === 'admin' ? 'bg-rose-500/10 text-rose-300 border-rose-500/20' : 'bg-slate-800 text-slate-300 border-slate-700'"
+                    :class="(user.ref_role === 'admin' || user.role === 'admin') ? 'bg-rose-500/10 text-rose-300 border-rose-500/20' : 'bg-slate-800 text-slate-300 border-slate-700'"
                     class="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border"
                   >
-                    {{ user.role || 'user' }}
+                    {{ user.ref_role || user.role || 'user' }}
                   </span>
                 </td>
 
                 <!-- Subscription Tier -->
                 <td class="px-6 py-4">
                   <span
-                    v-if="user.is_subscribed || user.subscription_tier === 'pro' || user.role === 'admin'"
+                    v-if="user.is_subscribed || user.subscription_tier === 'pro' || user.ref_role === 'admin' || user.role === 'admin'"
                     class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-400/10 text-amber-300 border border-amber-400/30"
                   >
                     <Crown class="h-3 w-3 text-amber-400" />

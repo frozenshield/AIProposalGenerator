@@ -21,14 +21,18 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // 1. Seed Default Admin User
-        $user = User::firstOrCreate(
+        // 1. Clean existing dummy user accounts and seed 1 Platform Admin User
+        User::where('email', '!=', 'admin@aiproposals.io')->delete();
+
+        $user = User::updateOrCreate(
             ['email' => 'admin@aiproposals.io'],
             [
-                'name' => 'Lead Solutions Architect',
+                'name' => 'System Administrator',
                 'password' => bcrypt('password123'),
+                'ref_role' => 'admin',
                 'proposals_count' => 0,
-                'is_subscribed' => false,
+                'is_subscribed' => true,
+                'subscription_tier' => 'pro',
             ]
         );
 

@@ -101,8 +101,10 @@ class AuthController extends Controller
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
+            'ref_role' => 'user',
             'proposals_count' => 0,
             'is_subscribed' => false,
+            'subscription_tier' => 'free',
         ]);
 
         Auth::login($user);

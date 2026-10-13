@@ -23,6 +23,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'ref_role',
         'role',
         'proposals_count',
         'is_subscribed',
@@ -41,6 +42,15 @@ class User extends Authenticatable
     ];
 
     /**
+     * The accessors to append to the model's array and JSON representation.
+     *
+     * @var array<int, string>
+     */
+    protected $appends = [
+        'role',
+    ];
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
@@ -50,12 +60,29 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'ref_role' => 'string',
             'role' => 'string',
             'is_subscribed' => 'boolean',
             'subscription_tier' => 'string',
             'subscribed_at' => 'datetime',
             'proposals_count' => 'integer',
         ];
+    }
+
+    /**
+     * Accessor for role to maintain backward compatibility mapping to ref_role.
+     */
+    public function getRoleAttribute(): string
+    {
+        return $this->attributes['ref_role'] ?? 'user';
+    }
+
+    /**
+     * Mutator for role to set ref_role correctly.
+     */
+    public function setRoleAttribute(?string $value): void
+    {
+        $this->attributes['ref_role'] = ($value === 'admin') ? 'admin' : 'user';
     }
 
     /**
@@ -67,11 +94,11 @@ class User extends Authenticatable
     }
 
     /**
-     * Check if the user is a platform administrator.
+     * Check if the user is a platform administrator strictly by ref_role enum.
      */
     public function isAdmin(): bool
     {
-        return $this->role === 'admin' || $this->email === 'admin@aiproposals.io';
+        return ($this->ref_role === 'admin');
     }
 
     /**

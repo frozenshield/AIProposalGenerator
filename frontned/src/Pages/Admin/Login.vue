@@ -1,7 +1,10 @@
 <script setup>
 import { ref } from 'vue'
 import { useForm } from '@inertiajs/vue3'
+import { useAuthStore } from '@/stores/authStore'
 import { ShieldCheck, Lock, Mail, ArrowRight, Sparkles, AlertCircle, Eye, EyeOff } from 'lucide-vue-next'
+
+const authStore = useAuthStore()
 
 const form = useForm({
   email: 'admin@aiproposals.io',
@@ -61,6 +64,10 @@ const submit = async () => {
       localError.value = data?.message || data?.errors?.email?.[0] || 'Authentication failed.'
       isSubmitting.value = false
       return
+    }
+
+    if (data.user) {
+      authStore.setUser(data.user)
     }
 
     window.location.href = '/admin/dashboard'

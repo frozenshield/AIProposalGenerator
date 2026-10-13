@@ -15,10 +15,15 @@ import {
 const authStore = useAuthStore()
 
 const form = ref({
-  email: 'admin@aiproposals.io',
-  password: 'password123',
+  email: '',
+  password: '',
   remember: false,
 })
+
+function fillAdminCredentials() {
+  form.value.email = 'admin@aiproposals.io'
+  form.value.password = 'password123'
+}
 
 async function submit() {
   const result = await authStore.login(form.value)
@@ -91,7 +96,7 @@ async function submit() {
             </div>
           </div>
 
-          <!-- Remember Me -->
+          <!-- Remember Me & Admin Quick-Fill -->
           <div class="flex items-center justify-between text-xs">
             <label class="flex items-center gap-2 cursor-pointer text-slate-400">
               <input
@@ -101,6 +106,14 @@ async function submit() {
               />
               <span>Remember this device</span>
             </label>
+
+            <button
+              type="button"
+              @click="fillAdminCredentials"
+              class="text-[11px] text-rose-400 hover:text-rose-300 font-semibold transition-colors cursor-pointer"
+            >
+              Fill Admin Account
+            </button>
           </div>
 
           <!-- Submit Button -->
