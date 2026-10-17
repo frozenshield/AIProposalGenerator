@@ -36,7 +36,9 @@ class AdminMiddleware
                 ], 403);
             }
 
-            abort(403, 'Restricted Area: Platform Administrator privileges required.');
+            return redirect()->route('admin.login')->withErrors([
+                'email' => 'Restricted Area: Platform Administrator privileges required.',
+            ]);
         }
 
         return $next($request);

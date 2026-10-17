@@ -78,17 +78,31 @@ Route::middleware('auth')->group(function () {
 use App\Http\Controllers\Admin\AdminController;
 
 Route::prefix('admin')->name('admin.')->group(function () {
+    Route::get('/', function () {
+        if (\Illuminate\Support\Facades\Auth::check() && \Illuminate\Support\Facades\Auth::user()->isAdmin()) {
+            return redirect()->route('admin.dashboard');
+        }
+        return redirect()->route('admin.login');
+    });
+
     Route::get('/login', [AdminController::class, 'showLogin'])->name('login');
     Route::post('/login', [AdminController::class, 'login']);
     Route::post('/logout', [AdminController::class, 'logout'])->name('logout');
 
     Route::middleware(['auth', 'admin'])->group(function () {
-        Route::get('/', function () {
-            return redirect()->route('admin.dashboard');
-        });
         Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
         Route::post('/test-ai-studio', [AdminController::class, 'testAiStudio'])->name('test-ai-studio');
         Route::post('/users/{user}/toggle-pro', [AdminController::class, 'toggleUserPro'])->name('users.toggle-pro');
+    });
+});
+
+Route::prefix('api/admin')->group(function () {
+    Route::post('/login', [AdminController::class, 'login']);
+    Route::post('/logout', [AdminController::class, 'logout']);
+    Route::middleware(['auth', 'admin'])->group(function () {
+        Route::get('/dashboard', [AdminController::class, 'dashboard']);
+        Route::post('/test-ai-studio', [AdminController::class, 'testAiStudio']);
+        Route::post('/users/{user}/toggle-pro', [AdminController::class, 'toggleUserPro']);
     });
 });
 

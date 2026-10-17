@@ -155,19 +155,36 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  async function logout() {
-    isLoading.value = true
+  function logout() {
+    isLoading.value = false
+
+    // 1. Immediately wipe local auth credentials and user state (0ms delay)
+    setUser(null)
     try {
-      await fetch('/api/logout', {
+      localStorage.removeItem('proposal_user')
+      const pStore = useProposalStore()
+      pStore.isSubscribed = false
+    } catch (e) {}
+
+    // 2. Dispatch server-side session termination asynchronously in the background
+    try {
+      fetch('/api/logout', {
         method: 'POST',
         credentials: 'include',
         headers: {
           'Accept': 'application/json',
         },
-      })
+      }).catch(() => {})
+
+      fetch('/logout', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json',
+        },
+      }).catch(() => {})
     } catch (e) {}
 
-    setUser(null)
     toast.info('You have safely signed out of your workspace.', 'Signed Out')
     return { success: true, redirect: '/login' }
   }

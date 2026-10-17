@@ -18,6 +18,7 @@ import {
   Settings,
   LogOut,
   Crown,
+  Loader2,
 } from 'lucide-vue-next'
 import { useProposalStore } from '@/stores/proposalStore'
 import { useAuthStore } from '@/stores/authStore'
@@ -94,10 +95,21 @@ const userInitials = computed(() => {
     .substring(0, 2)
 })
 
-const handleLogout = async () => {
+const isLoggingOut = ref(false)
+
+const handleLogout = () => {
+  if (isLoggingOut.value) return
+  isLoggingOut.value = true
+
   try {
-    await authStore.logout()
-  } catch (e) {}
+    authStore.logout()
+  } catch (e) {
+    try {
+      localStorage.removeItem('proposal_user')
+    } catch (err) {}
+  }
+
+  // Instant navigation with zero UI freeze
   window.location.href = '/login'
 }
 
@@ -352,10 +364,12 @@ const breadcrumbInfo = computed(() => {
             <div class="flex items-center gap-1 text-slate-400">
               <button
                 @click="handleLogout"
-                class="p-1.5 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                :disabled="isLoggingOut"
+                class="p-1.5 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Log Out"
               >
-                <LogOut class="h-4 w-4" />
+                <Loader2 v-if="isLoggingOut" class="h-4 w-4 animate-spin text-rose-400" />
+                <LogOut v-else class="h-4 w-4" />
               </button>
             </div>
           </div>
@@ -480,10 +494,12 @@ const breadcrumbInfo = computed(() => {
               </div>
               <button
                 @click="handleLogout"
-                class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                :disabled="isLoggingOut"
+                class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Log Out"
               >
-                <LogOut class="h-4 w-4" />
+                <Loader2 v-if="isLoggingOut" class="h-4 w-4 animate-spin text-rose-400" />
+                <LogOut v-else class="h-4 w-4" />
               </button>
             </div>
           </template>

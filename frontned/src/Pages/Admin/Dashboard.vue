@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { router, usePage } from '@inertiajs/vue3'
+import { useAuthStore } from '@/stores/authStore'
 import {
   ShieldCheck,
   Cpu,
@@ -162,13 +163,36 @@ const togglePro = async (user) => {
 }
 
 const handleAdminLogout = () => {
-  const isInertia = typeof window !== 'undefined' && Boolean(document.getElementById('app')?.dataset?.page)
-  if (isInertia && typeof router?.post === 'function') {
-    router.post('/admin/logout')
-  } else {
-    window.location.href = '/admin/login'
+  try {
+    const authStore = useAuthStore()
+    authStore.logout()
+  } catch (e) {
+    try {
+      localStorage.removeItem('proposal_user')
+    } catch (err) {}
   }
+
+  // Fire background session invalidation
+  fetch('/api/admin/logout', { method: 'POST', credentials: 'include' }).catch(() => {})
+  fetch('/admin/logout', { method: 'POST', credentials: 'include' }).catch(() => {})
+
+  // Instant redirect to dedicated admin login
+  window.location.href = '/admin'
 }
+
+onMounted(() => {
+  // Client-side guard: verify active user is an administrator
+  try {
+    const saved = localStorage.getItem('proposal_user')
+    const user = saved ? JSON.parse(saved) : null
+    const role = user?.ref_role || user?.role
+    if (!user || role !== 'admin') {
+      window.location.href = '/admin'
+    }
+  } catch (e) {
+    window.location.href = '/admin'
+  }
+})
 
 const formatTokens = (val) => {
   if (!val) return '—'

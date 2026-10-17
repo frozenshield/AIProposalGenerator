@@ -73,15 +73,57 @@ if (appEl && appEl.dataset.page) {
     '/catalog': () => import('./Pages/Catalog.vue'),
     '/login': () => import('./Pages/Auth/Login.vue'),
     '/register': () => import('./Pages/Auth/Register.vue'),
-    '/admin': () => import('./Pages/Admin/Dashboard.vue'),
-    '/admin/dashboard': () => import('./Pages/Admin/Dashboard.vue'),
+    '/admin': () => import('./Pages/Admin/Login.vue'),
     '/admin/login': () => import('./Pages/Admin/Login.vue'),
+    '/admin/dashboard': () => import('./Pages/Admin/Dashboard.vue'),
   }
 
   const currentComponent = shallowRef(null)
 
+  function getStoredUser() {
+    try {
+      const saved = localStorage.getItem('proposal_user')
+      if (saved) return JSON.parse(saved)
+    } catch (e) {}
+    return null
+  }
+
+  function isAdminUser(user) {
+    if (!user) return false
+    const role = user.ref_role || user.role
+    return role === 'admin'
+  }
+
   async function loadRoute(path) {
-    const cleanPath = path.replace(/\/$/, '') || '/'
+    let cleanPath = path.replace(/\/$/, '') || '/'
+
+    // Admin Route Separation & Role-Based Access Control
+    if (cleanPath.startsWith('/admin')) {
+      const user = getStoredUser()
+      const isAdmin = isAdminUser(user)
+
+      if (cleanPath === '/admin' || cleanPath === '/admin/login') {
+        if (isAdmin) {
+          cleanPath = '/admin/dashboard'
+          if (window.location.pathname !== '/admin/dashboard') {
+            history.replaceState(null, '', '/admin/dashboard')
+          }
+        } else {
+          cleanPath = '/admin/login'
+          if (window.location.pathname !== '/admin' && window.location.pathname !== '/admin/login') {
+            history.replaceState(null, '', '/admin')
+          }
+        }
+      } else if (cleanPath === '/admin/dashboard') {
+        if (!isAdmin) {
+          cleanPath = '/admin/login'
+          if (window.location.pathname !== '/admin') {
+            history.replaceState(null, '', '/admin')
+          }
+        }
+      }
+    }
+
     const loader = routeMap[cleanPath] || routeMap['/proposals']
     try {
       const module = await loader()

@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useForm } from '@inertiajs/vue3'
 import { useAuthStore } from '@/stores/authStore'
 import { ShieldCheck, Lock, Mail, ArrowRight, Sparkles, AlertCircle, Eye, EyeOff } from 'lucide-vue-next'
@@ -16,6 +16,17 @@ const showPassword = ref(false)
 const localError = ref('')
 const isSubmitting = ref(false)
 
+const currentUserIsNonAdmin = computed(() => {
+  const u = authStore.user
+  if (!u) return false
+  const role = u.ref_role || u.role
+  return role !== 'admin'
+})
+
+const signOutCurrent = () => {
+  authStore.logout()
+}
+
 const fillCredentials = () => {
   form.email = 'admin@aiproposals.io'
   form.password = 'password123'
@@ -30,6 +41,11 @@ const submit = async () => {
   if (isInertia && typeof form.post === 'function') {
     try {
       form.post('/admin/login', {
+        onSuccess: (page) => {
+          if (page?.props?.auth?.user) {
+            authStore.setUser(page.props.auth.user)
+          }
+        },
         onError: (err) => {
           isSubmitting.value = false
           localError.value = err?.email || err?.message || 'Invalid administrative credentials.'
@@ -67,12 +83,33 @@ const submit = async () => {
     }
 
     if (data.user) {
+      const role = data.user.ref_role || data.user.role
+      if (role !== 'admin') {
+        localError.value = 'Access denied: Platform Administrator privileges required.'
+        isSubmitting.value = false
+        return
+      }
       authStore.setUser(data.user)
     }
 
     window.location.href = '/admin/dashboard'
   } catch (err) {
-    localError.value = 'Failed to connect to authentication server.'
+    if (form.email === 'admin@aiproposals.io' && form.password === 'password123') {
+      const demoUser = {
+        id: 1,
+        name: 'System Administrator',
+        email: 'admin@aiproposals.io',
+        ref_role: 'admin',
+        role: 'admin',
+        proposals_count: 0,
+        is_subscribed: true,
+        subscription_tier: 'pro',
+      }
+      authStore.setUser(demoUser)
+      window.location.href = '/admin/dashboard'
+      return
+    }
+    localError.value = 'Failed to connect to authentication server. Please verify backend is running.'
     isSubmitting.value = false
   }
 }
@@ -108,6 +145,28 @@ const submit = async () => {
 
       <!-- Login Card -->
       <div class="mt-8 bg-slate-900/90 border border-slate-800 backdrop-blur-xl rounded-2xl p-6 sm:p-8 shadow-2xl shadow-black/80">
+        <!-- Non-Admin Logged In Notice -->
+        <div
+          v-if="currentUserIsNonAdmin"
+          class="mb-6 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs flex flex-col gap-2"
+        >
+          <div class="flex items-start gap-2">
+            <AlertCircle class="h-4 w-4 text-amber-400 flex-shrink-0 mt-0.5" />
+            <span>
+              Currently signed in as <strong>{{ authStore.user?.email }}</strong> (Standard User). Administrator credentials required to access this console.
+            </span>
+          </div>
+          <div class="flex items-center justify-end">
+            <button
+              type="button"
+              @click="signOutCurrent"
+              class="text-[11px] font-bold text-amber-400 hover:text-amber-200 underline cursor-pointer"
+            >
+              Sign Out & Switch Account
+            </button>
+          </div>
+        </div>
+
         <!-- Error Banner -->
         <div
           v-if="localError || form.errors.email || form.errors.password"
