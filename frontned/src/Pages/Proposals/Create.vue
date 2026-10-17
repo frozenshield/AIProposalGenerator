@@ -47,7 +47,7 @@ const steps = [
   <AppLayout currentRoute="Create Proposal" subRoute="Create">
     <div class="px-4 sm:px-6 lg:px-8 py-6 space-y-6 max-w-[1700px] mx-auto">
       <!-- Page Header with Title & Live AI Indicator -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200 print:hidden">
         <div>
           <div class="flex items-center gap-2">
             <h1 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
@@ -63,7 +63,7 @@ const steps = [
         </div>
 
         <!-- Mobile Tab Switcher (Visible on small screens) -->
-        <div class="flex lg:hidden rounded-xl bg-slate-200/80 p-1 self-start sm:self-auto">
+        <div class="flex lg:hidden rounded-xl bg-slate-200/80 p-1 self-start sm:self-auto print:hidden">
           <button
             type="button"
             @click="mobileActiveTab = 'form'"
@@ -104,7 +104,7 @@ const steps = [
         <div
           :class="[
             mobileActiveTab === 'preview' ? 'hidden lg:block' : 'block',
-            'lg:col-span-6 xl:col-span-5 space-y-6'
+            'lg:col-span-6 xl:col-span-5 space-y-6 print:hidden'
           ]"
         >
           <!-- Stepper Progress Bar -->
@@ -189,7 +189,7 @@ const steps = [
         <div
           :class="[
             mobileActiveTab === 'form' ? 'hidden lg:block' : 'block',
-            'lg:col-span-6 xl:col-span-7 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:pr-2'
+            'lg:col-span-6 xl:col-span-7 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:pr-2 print:col-span-12 print:static print:max-h-none print:overflow-visible print:p-0 print:m-0 print:w-full'
           ]"
         >
           <DocumentPreview />

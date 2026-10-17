@@ -13,10 +13,15 @@ use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Route;
 
-// Public Root Redirect
+// Public Landing Page
 Route::get('/', function () {
-    return auth()->check() ? redirect()->route('dashboard') : redirect()->route('login');
-});
+    return Inertia::render('Landing', [
+        'canLogin' => true,
+        'canRegister' => true,
+        'isAuthenticated' => auth()->check(),
+        'user' => auth()->user(),
+    ]);
+})->name('landing');
 
 // System Reference Data Endpoint (for dynamic database-backed dropdowns)
 Route::get('/api/reference-options', [ReferenceController::class, 'index'])->name('api.reference-options');
@@ -25,12 +30,12 @@ Route::get('/api/user', [AuthController::class, 'user'])->name('api.user');
 // PayMongo Webhook Endpoint (Public, CSRF Exempt)
 Route::post('/webhooks/paymongo', [PayMongoWebhookController::class, 'handle'])->name('webhooks.paymongo');
 
-// PayMongo Checkout Session (Public / Authenticated)
-Route::post('/subscription/checkout', [SubscriptionController::class, 'checkout'])->name('subscription.checkout');
-Route::post('/api/subscription/checkout', [SubscriptionController::class, 'checkout']);
+// PayMongo Checkout Session (Public / Authenticated with rate limiting)
+Route::post('/subscription/checkout', [SubscriptionController::class, 'checkout'])->middleware(['throttle:checkout'])->name('subscription.checkout');
+Route::post('/api/subscription/checkout', [SubscriptionController::class, 'checkout'])->middleware(['throttle:checkout']);
 
-// Guest Authentication Routes
-Route::middleware('guest')->group(function () {
+// Guest Authentication Routes (with brute-force rate limiter)
+Route::middleware(['guest', 'throttle:auth'])->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/api/login', [AuthController::class, 'login']);
@@ -56,7 +61,7 @@ Route::middleware('auth')->group(function () {
     // Deliverables Catalog
     Route::get('/catalog', [CatalogController::class, 'index'])->name('catalog.index');
     Route::post('/catalog', [CatalogController::class, 'store'])->name('catalog.store');
-    Route::post('/catalog/ai-generate', [CatalogController::class, 'aiGenerate'])->name('catalog.ai-generate');
+    Route::post('/catalog/ai-generate', [CatalogController::class, 'aiGenerate'])->middleware('throttle:ai-generation')->name('catalog.ai-generate');
     Route::delete('/catalog/{catalogItem}', [CatalogController::class, 'destroy'])->name('catalog.destroy');
 
     // AI Proposals Workflow

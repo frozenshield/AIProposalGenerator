@@ -34,20 +34,45 @@ class ProposalController extends Controller
 
         $proposals = $user
             ? $user->proposals()->with(['client', 'lineItems', 'sections'])->latest()->get()
-            : Proposal::with(['client', 'lineItems', 'sections'])->latest()->get();
+            : collect([]);
 
         $clients = $user
             ? $user->clients()->orderBy('name')->get()
-            : Client::orderBy('name')->get();
+            : collect([]);
 
         $catalog = $user
-            ? CatalogItem::where('user_id', $user->id)->orWhereNull('user_id')->orderBy('name')->get()
-            : CatalogItem::orderBy('name')->get();
+            ? $user->catalogItems()->orderBy('name')->get()
+            : collect([]);
 
         return Inertia::render('Proposals/Index', [
             'proposals' => $proposals,
             'clients' => $clients,
             'catalog' => $catalog,
+        ]);
+    }
+
+    /**
+     * JSON API listing of proposals scoped to authenticated tenant.
+     */
+    public function apiIndex(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if (! $user) {
+            return response()->json([
+                'success' => false,
+                'proposals' => [],
+            ], 401);
+        }
+
+        $proposals = $user->proposals()
+            ->with(['client', 'lineItems', 'sections'])
+            ->latest()
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'proposals' => $proposals,
         ]);
     }
 
@@ -60,11 +85,11 @@ class ProposalController extends Controller
 
         $clients = $user
             ? $user->clients()->orderBy('name')->get()
-            : Client::orderBy('name')->get();
+            : collect([]);
 
         $catalogItems = $user
-            ? CatalogItem::where('user_id', $user->id)->orWhereNull('user_id')->orderBy('category')->orderBy('name')->get()
-            : CatalogItem::orderBy('category')->orderBy('name')->get();
+            ? $user->catalogItems()->orderBy('category')->orderBy('name')->get()
+            : collect([]);
 
         return Inertia::render('Proposals/Create', [
             'clients' => $clients,
@@ -80,8 +105,15 @@ class ProposalController extends Controller
     {
         $user = $request->user();
 
+        if (! $user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Authentication required to create or save a proposal.',
+            ], 401);
+        }
+
         // 1. Freemium quota check: non-subscribed users are limited to 3 proposals
-        if ($user && ! $user->is_subscribed && $user->proposals_count >= 3) {
+        if (! $user->is_subscribed && $user->proposals_count >= 3) {
             return response()->json([
                 'error' => 'limit_reached',
                 'message' => 'Free tier limit reached. You can only create up to 3 proposals on the free plan.',
@@ -91,26 +123,10 @@ class ProposalController extends Controller
             ], 403);
         }
 
-        // Demo / Guest session fallback if running without mandatory authentication
-        if (! $user) {
-            $sessionCount = (int) $request->session()->get('proposals_count', 0);
-            if ($sessionCount >= 3) {
-                return response()->json([
-                    'error' => 'limit_reached',
-                    'message' => 'Free tier limit reached. You have created 3 proposals. Please upgrade to Pro.',
-                    'proposals_count' => $sessionCount,
-                    'limit' => 3,
-                    'is_subscribed' => false,
-                ], 403);
-            }
-        }
-
         $validated = $request->validated();
 
         // Verify the client belongs to this tenant
-        $client = $user
-            ? $user->clients()->findOrFail($validated['client_id'])
-            : Client::findOrFail($validated['client_id']);
+        $client = $user->clients()->findOrFail($validated['client_id']);
 
         $proposalNumber = 'PROP-' . date('Y') . '-' . str_pad((string) (Proposal::max('id') + 1), 3, '0', STR_PAD_LEFT);
         $title = $validated['title'] ?? 'Strategic AI Transformation Proposal (' . date('M Y') . ')';

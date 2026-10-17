@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { useForm, usePage, router } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import { useProposalStore } from '@/stores/proposalStore'
+import { useAuthGuard } from '@/composables/useAuthGuard'
 import { useToast } from '@/composables/useToast'
 import {
   Building2,
@@ -25,6 +26,7 @@ const props = defineProps({
 })
 
 const store = useProposalStore()
+const authGuard = useAuthGuard()
 const toast = useToast()
 const isModalOpen = ref(false)
 
@@ -81,6 +83,9 @@ function selectCartoonAvatar(url) {
 }
 
 function openModal() {
+  if (!authGuard.requireAuth(() => openModal(), { message: 'Sign in to register a new client account.' })) {
+    return
+  }
   form.clearErrors()
   if (!form.avatar) {
     form.avatar = defaultCartoonAvatars[0].url
@@ -182,6 +187,10 @@ async function submitClient() {
 }
 
 async function deleteClient(id, name) {
+  if (!authGuard.requireAuth(() => deleteClient(id, name), { message: 'Sign in to manage client accounts.' })) {
+    return
+  }
+
   if (!confirm(`Are you sure you want to delete ${name}?`)) return
 
   const isInertia = typeof window !== 'undefined' && Boolean(document.getElementById('app')?.dataset?.page)

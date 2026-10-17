@@ -525,88 +525,39 @@ Guided by your strategic mandate—"${aiPromptContext.value}"—our solution del
   }
 
   // Directory of all generated proposals (All formatted in Philippine Pesos ₱)
-  const proposalsList = ref([
-    {
-      id: 'PROP-2026-884',
-      title: 'Strategic AI Modernization & Cost Optimization Proposal',
-      clientId: 1,
-      clientName: 'Sarah Jenkins',
-      clientCompany: 'Apex Retail Solutions Philippines',
-      clientAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-      industry: 'E-Commerce & Retail',
-      status: 'Drafting',
-      total: 376540.00,
-      itemCount: 3,
-      date: 'Oct 08, 2026',
-      aiScore: '98%',
-      aiAngle: 'Cost-Saving Focus & ROI',
-      aiSummary: 'Turnkey AI modernization reducing recurring operational overhead by 42% with guaranteed 6-month ROI in PHP.',
-    },
-    {
-      id: 'PROP-2026-883',
-      title: 'Autonomous Healthcare Pipeline & SOC2 Hardening',
-      clientId: 2,
-      clientName: 'David Chen',
-      clientCompany: 'OmniHealth Technologies Asia',
-      clientAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-      industry: 'Healthcare & Biotech',
-      status: 'Sent',
-      total: 642000.00,
-      itemCount: 4,
-      date: 'Oct 05, 2026',
-      aiScore: '94%',
-      aiAngle: 'Security & Compliance',
-      aiSummary: 'HIPAA and SOC2 compliance automation and microservices zero-downtime failover architecture.',
-    },
-    {
-      id: 'PROP-2026-882',
-      title: 'FinTech Cloud Infrastructure Resilience Sprint',
-      clientId: 3,
-      clientName: 'Elena Rostova',
-      clientCompany: 'FinVanguard Global Capital',
-      clientAvatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
-      industry: 'Financial Services',
-      status: 'Approved',
-      total: 1120000.00,
-      itemCount: 5,
-      date: 'Oct 02, 2026',
-      aiScore: '99%',
-      aiAngle: 'Speed-to-Market',
-      aiSummary: 'High-frequency transaction streaming engine and multi-cloud disaster recovery.',
-    },
-    {
-      id: 'PROP-2026-881',
-      title: 'Supply Chain Automated Dispatcher Model',
-      clientId: 4,
-      clientName: 'Marcus Sterling',
-      clientCompany: 'LogiFlow Supply Chain Corp',
-      clientAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
-      industry: 'Supply Chain & Logistics',
-      status: 'In Review',
-      total: 485000.00,
-      itemCount: 3,
-      date: 'Sep 28, 2026',
-      aiScore: '91%',
-      aiAngle: 'Cost-Saving Focus',
-      aiSummary: 'Automated fleet dispatch routing reducing fuel overhead by 18% in logistics operations.',
-    },
-    {
-      id: 'PROP-2026-879',
-      title: 'Legacy Database to Distributed Snowflake Migration',
-      clientId: 1,
-      clientName: 'Sarah Jenkins',
-      clientCompany: 'Apex Retail Solutions Philippines',
-      clientAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-      industry: 'E-Commerce & Retail',
-      status: 'Archived',
-      total: 248000.00,
-      itemCount: 2,
-      date: 'Sep 15, 2026',
-      aiScore: '89%',
-      aiAngle: 'Modernization',
-      aiSummary: 'Automated data pipelines with zero data loss validation and modern lakehouse tooling.',
-    },
-  ])
+  const proposalsList = ref([])
+
+  async function fetchProposals() {
+    try {
+      const res = await fetch('/api/proposals', {
+        headers: { Accept: 'application/json' },
+        credentials: 'include',
+      })
+      if (res.ok) {
+        const data = await res.json()
+        if (data.proposals && Array.isArray(data.proposals)) {
+          proposalsList.value = data.proposals.map((p) => ({
+            id: p.proposal_number || `PROP-${p.id}`,
+            title: p.title,
+            clientId: p.client_id,
+            clientName: p.client?.name || 'Client Representative',
+            clientCompany: p.client?.company || 'Enterprise Account',
+            clientAvatar: p.client?.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${p.client?.name || p.id}`,
+            industry: p.client?.industry || 'Technology',
+            status: p.status || 'Drafting',
+            total: Number(p.grand_total || 0),
+            itemCount: p.line_items ? p.line_items.length : 0,
+            date: new Date(p.created_at || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+            aiScore: '96%',
+            aiAngle: p.ai_tone || 'Executive Strategic',
+            aiSummary: p.ai_prompt_context || 'AI-synthesized custom scope and deliverable roadmap.',
+          }))
+        }
+      }
+    } catch (e) {
+      console.error('Failed to fetch proposals:', e)
+    }
+  }
 
   function deleteProposal(id) {
     const idx = proposalsList.value.findIndex((p) => p.id === id)
@@ -704,6 +655,7 @@ Guided by your strategic mandate—"${aiPromptContext.value}"—our solution del
     fetchReferences,
     fetchClients,
     fetchCatalog,
+    fetchProposals,
     setStep,
     nextStep,
     prevStep,

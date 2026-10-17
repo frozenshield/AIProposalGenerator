@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { useForm, router } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import { useProposalStore } from '@/stores/proposalStore'
+import { useAuthGuard } from '@/composables/useAuthGuard'
 import { useToast } from '@/composables/useToast'
 import { Layers, Plus, Tag, Check, X, Loader2, Trash2, Sparkles, Wand2 } from 'lucide-vue-next'
 
@@ -14,6 +15,7 @@ const props = defineProps({
 })
 
 const store = useProposalStore()
+const authGuard = useAuthGuard()
 const toast = useToast()
 const isModalOpen = ref(false)
 const aiConceptPrompt = ref('')
@@ -70,6 +72,9 @@ const quickAiPrompts = [
 ]
 
 function openModal() {
+  if (!authGuard.requireAuth(() => openModal(), { message: 'Sign in to add items to your catalog.' })) {
+    return
+  }
   form.clearErrors()
   aiConceptPrompt.value = ''
   isModalOpen.value = true
@@ -82,6 +87,10 @@ function closeModal() {
 }
 
 async function generateWithAi(promptText = null) {
+  if (!authGuard.requireAuth(() => generateWithAi(promptText), { message: 'Sign in to use AI deliverable auto-generation.' })) {
+    return
+  }
+
   const query = promptText || aiConceptPrompt.value || form.name
   if (!query || !query.trim()) {
     toast.warning('Please enter a service concept or title to generate specs.', 'Input Required')
@@ -206,6 +215,10 @@ async function submitCatalogItem() {
 }
 
 async function deleteItem(id, name) {
+  if (!authGuard.requireAuth(() => deleteItem(id, name), { message: 'Sign in to manage catalog items.' })) {
+    return
+  }
+
   if (!confirm(`Are you sure you want to delete deliverable "${name}"?`)) return
 
   const isInertia = typeof window !== 'undefined' && Boolean(document.getElementById('app')?.dataset?.page)

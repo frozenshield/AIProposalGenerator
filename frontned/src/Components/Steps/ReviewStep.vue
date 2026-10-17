@@ -1,5 +1,7 @@
 <script setup>
 import { useProposalStore } from '@/stores/proposalStore'
+import { useAuthGuard } from '@/composables/useAuthGuard'
+import { useToast } from '@/composables/useToast'
 import {
   CheckCircle2,
   FileCheck,
@@ -15,9 +17,18 @@ import {
 } from 'lucide-vue-next'
 
 const store = useProposalStore()
+const authGuard = useAuthGuard()
+const toast = useToast()
 
 function formatCurrency(val) {
   return store.formatCurrency(val)
+}
+
+function handlePublish() {
+  if (!authGuard.requireAuth(() => handlePublish(), { message: 'Sign in to publish proposals to client portals.' })) {
+    return
+  }
+  toast.success(`Proposal ${store.proposalNumber} has been published and dispatched!`, 'Proposal Published')
 }
 </script>
 
@@ -120,7 +131,8 @@ function formatCurrency(val) {
 
         <button
           type="button"
-          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-sm transition-all shadow-emerald-600/20"
+          @click="handlePublish"
+          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-sm transition-all shadow-emerald-600/20 cursor-pointer"
         >
           <Send class="h-3.5 w-3.5" />
           <span>Publish & Send Client Portal</span>

@@ -60,3 +60,85 @@
   animation: shimmerWave 1.4s ease infinite;
 }
 
+/* ============================================================
+   HIGH-FIDELITY PRINT & PDF EXPORT STYLES
+   ============================================================ */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm 14mm;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Completely hide app layout and non-document controls */
+  header,
+  nav,
+  aside,
+  button,
+  .print\:hidden,
+  [role="dialog"] {
+    display: none !important;
+  }
+
+  /* Reset flex/grid wrappers to prevent squishing */
+  .min-h-screen,
+  .flex,
+  .grid {
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+  }
+
+  .lg\:pl-64,
+  .xl\:pl-72,
+  .lg\:col-span-6,
+  .lg\:col-span-7,
+  .xl\:col-span-5,
+  .xl\:col-span-7 {
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Printable Proposal Canvas formatting */
+  #printable-proposal-canvas {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    overflow: visible !important;
+  }
+
+  /* Keep table rows and signature blocks together */
+  tr,
+  table,
+  .break-inside-avoid,
+  .signature-box {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Crisp text rendering */
+  p, h1, h2, h3, h4, span, strong {
+    color: #0f172a !important;
+  }
+
+  .text-slate-500, .text-slate-400 {
+    color: #475569 !important;
+  }
+}
+
+

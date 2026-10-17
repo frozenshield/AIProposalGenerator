@@ -21,8 +21,12 @@ import {
 } from 'lucide-vue-next'
 import { useProposalStore } from '@/stores/proposalStore'
 import { useAuthStore } from '@/stores/authStore'
+import { useAuthGuard } from '@/composables/useAuthGuard'
 import SubscriptionModal from '@/Components/Modals/SubscriptionModal.vue'
+import AuthModal from '@/Components/Modals/AuthModal.vue'
 import ToastContainer from '@/Components/UI/ToastContainer.vue'
+
+const authGuard = useAuthGuard()
 
 const props = defineProps({
   currentRoute: {
@@ -200,7 +204,7 @@ const breadcrumbInfo = computed(() => {
   <div class="min-h-screen bg-slate-50 flex">
     <!-- Desktop Persistent Sidebar -->
     <aside
-      class="hidden lg:flex lg:flex-col lg:w-64 xl:w-72 bg-slate-900 border-r border-slate-800 text-slate-300 flex-shrink-0 fixed inset-y-0 z-30"
+      class="hidden lg:flex lg:flex-col lg:w-64 xl:w-72 bg-slate-900 border-r border-slate-800 text-slate-300 flex-shrink-0 fixed inset-y-0 z-30 print:hidden"
     >
       <!-- Brand Logo & Header -->
       <div class="h-16 flex items-center justify-between px-6 border-b border-slate-800/80 bg-slate-950/40">
@@ -378,7 +382,7 @@ const breadcrumbInfo = computed(() => {
     <!-- Mobile Drawer Sidebar (Slide-over) -->
     <div
       v-if="isMobileMenuOpen"
-      class="fixed inset-0 z-50 lg:hidden flex"
+      class="fixed inset-0 z-50 lg:hidden flex print:hidden"
       role="dialog"
       aria-modal="true"
     >
@@ -494,9 +498,9 @@ const breadcrumbInfo = computed(() => {
     </div>
 
     <!-- Main Content Area with Desktop Offset -->
-    <div class="flex-1 flex flex-col min-w-0 lg:pl-64 xl:pl-72">
+    <div class="flex-1 flex flex-col min-w-0 lg:pl-64 xl:pl-72 print:pl-0 print:m-0 print:w-full">
       <!-- Top Persistent Navigation Bar -->
-      <header class="sticky top-0 z-20 h-16 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+      <header class="sticky top-0 z-20 h-16 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-6 lg:px-8 flex items-center justify-between print:hidden">
         <!-- Left: Mobile Menu Trigger + Dynamic Breadcrumb -->
         <div class="flex items-center gap-3 sm:gap-4">
           <button
@@ -592,6 +596,14 @@ const breadcrumbInfo = computed(() => {
       :error-message="store.subscriptionError"
       @close="store.closeSubscriptionModal"
       @upgrade="store.upgradeToPro"
+    />
+
+    <!-- Global Guest Authentication Modal -->
+    <AuthModal
+      :show="authGuard.isAuthModalOpen.value"
+      :initial-mode="authGuard.authModalMode.value"
+      @close="authGuard.closeAuthModal"
+      @success="authGuard.onAuthSuccess"
     />
 
     <!-- Global Toast Notifications Container -->

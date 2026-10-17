@@ -109,6 +109,15 @@ class CatalogController extends Controller
      */
     public function aiGenerate(Request $request, \App\Services\GeminiService $gemini): \Illuminate\Http\JsonResponse
     {
+        $user = $request->user();
+
+        if (! $user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Authentication required to generate AI deliverables.',
+            ], 401);
+        }
+
         $validated = $request->validate([
             'prompt' => ['required', 'string', 'max:500'],
         ]);

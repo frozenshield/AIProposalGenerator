@@ -64,7 +64,8 @@ if (appEl && appEl.dataset.page) {
   const pinia = createPinia()
 
   const routeMap = {
-    '/': () => import('./Pages/Proposals/Index.vue'),
+    '/': () => import('./Pages/Landing.vue'),
+    '/landing': () => import('./Pages/Landing.vue'),
     '/proposals': () => import('./Pages/Proposals/Index.vue'),
     '/proposals/create': () => import('./Pages/Proposals/Create.vue'),
     '/dashboard': () => import('./Pages/Dashboard.vue'),

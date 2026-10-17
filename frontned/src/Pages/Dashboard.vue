@@ -69,16 +69,42 @@ onMounted(async () => {
   }
 })
 
-const stats = [
-  { name: 'Active Proposals', value: '14', change: '+18% this month', icon: FileText },
-  { name: 'Total Win Value', value: '₱2,845,000', change: '+32% closing rate', icon: TrendingUp },
-  { name: 'Client Accounts', value: '42', change: '4 new this week', icon: Users },
-  { name: 'Avg. AI Turnaround', value: '3.2 mins', change: '85% faster', icon: Sparkles },
-]
+const stats = computed(() => {
+  const active = Number(props.metrics?.activeProposals || 0)
+  const totalVal = Number(props.metrics?.totalWinValue || 0)
+  const clients = Number(props.metrics?.clientAccounts || 0)
+
+  return [
+    {
+      name: 'Active Proposals',
+      value: active.toString(),
+      change: active > 0 ? `${active} active deal${active === 1 ? '' : 's'}` : '0 active proposals',
+      icon: FileText,
+    },
+    {
+      name: 'Total Win Value',
+      value: store.formatCurrency(totalVal),
+      change: totalVal > 0 ? 'Closed won revenue' : '₱0.00 pipeline won',
+      icon: TrendingUp,
+    },
+    {
+      name: 'Client Accounts',
+      value: clients.toString(),
+      change: clients > 0 ? `${clients} registered account${clients === 1 ? '' : 's'}` : '0 client accounts',
+      icon: Users,
+    },
+    {
+      name: 'Avg. AI Turnaround',
+      value: active > 0 ? '< 2 mins' : 'Instant AI',
+      change: 'Gemini 1.5 Pro synthesis',
+      icon: Sparkles,
+    },
+  ]
+})
 
 const recentProposalsList = computed(() => {
   if (props.recentProposals && props.recentProposals.length) {
-    return props.recentProposals.map(p => ({
+    return props.recentProposals.map((p) => ({
       id: p.proposal_number || `PROP-${p.id}`,
       client: p.client?.company || p.client?.name || 'Enterprise Client',
       value: `₱${Number(p.grand_total || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
@@ -86,12 +112,7 @@ const recentProposalsList = computed(() => {
       date: new Date(p.created_at || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
     }))
   }
-
-  return [
-    { id: 'PROP-2026-884', client: 'Apex Retail Solutions Philippines', value: '₱376,540', status: 'Drafting', date: 'Just now' },
-    { id: 'PROP-2026-883', client: 'OmniHealth Tech Asia', value: '₱642,000', status: 'Sent', date: '2 days ago' },
-    { id: 'PROP-2026-882', client: 'FinVanguard Global Capital', value: '₱1,120,000', status: 'Approved', date: 'Oct 04' },
-  ]
+  return []
 })
 </script>
 
@@ -179,7 +200,7 @@ const recentProposalsList = computed(() => {
           <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Recent Proposals</h2>
           <a href="/proposals" class="text-xs font-semibold text-brand-600 hover:text-brand-700">View All</a>
         </div>
-        <div class="divide-y divide-slate-100">
+        <div v-if="recentProposalsList.length" class="divide-y divide-slate-100">
           <div
             v-for="p in recentProposalsList"
             :key="p.id"
@@ -196,6 +217,20 @@ const recentProposalsList = computed(() => {
               </span>
             </div>
           </div>
+        </div>
+        <div v-else class="py-8 text-center space-y-3">
+          <div class="h-10 w-10 rounded-xl bg-slate-50 border border-slate-200 text-slate-400 flex items-center justify-center mx-auto">
+            <FileText class="h-5 w-5" />
+          </div>
+          <p class="text-xs font-semibold text-slate-700">No proposals created yet</p>
+          <p class="text-[11px] text-slate-400 max-w-xs mx-auto">Click "New Proposal" to synthesize your first enterprise proposal with AI.</p>
+          <a
+            href="/proposals/create"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold shadow-xs transition-colors"
+          >
+            <PlusCircle class="h-3.5 w-3.5" />
+            <span>Create First Proposal</span>
+          </a>
         </div>
       </div>
     </div>

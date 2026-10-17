@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import { useProposalStore } from '@/stores/proposalStore'
 import {
@@ -28,7 +28,45 @@ import {
   Calendar,
 } from 'lucide-vue-next'
 
+const props = defineProps({
+  proposals: {
+    type: Array,
+    default: () => [],
+  },
+  clients: {
+    type: Array,
+    default: () => [],
+  },
+  catalog: {
+    type: Array,
+    default: () => [],
+  },
+})
+
 const store = useProposalStore()
+
+onMounted(() => {
+  if (props.proposals && props.proposals.length > 0) {
+    store.proposalsList = props.proposals.map((p) => ({
+      id: p.proposal_number || `PROP-${p.id}`,
+      title: p.title,
+      clientId: p.client_id,
+      clientName: p.client?.name || 'Client Representative',
+      clientCompany: p.client?.company || 'Enterprise Account',
+      clientAvatar: p.client?.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${p.client?.name || p.id}`,
+      industry: p.client?.industry || 'Technology',
+      status: p.status || 'Drafting',
+      total: Number(p.grand_total || 0),
+      itemCount: p.line_items ? p.line_items.length : 0,
+      date: new Date(p.created_at || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      aiScore: '96%',
+      aiAngle: p.ai_tone || 'Executive Strategic',
+      aiSummary: p.ai_prompt_context || 'AI-synthesized custom scope and deliverable roadmap.',
+    }))
+  } else {
+    store.fetchProposals()
+  }
+})
 
 // View Mode: 'cards' or 'table'
 const viewMode = ref('cards')
@@ -53,6 +91,22 @@ const statusFilters = [
 function formatCurrency(val) {
   return store.formatCurrency(val)
 }
+
+const totalProposalsCount = computed(() => (store.proposalsList || []).length)
+
+const wonProposalsCount = computed(() => {
+  return (store.proposalsList || []).filter((p) => p.status === 'Approved' || p.status === 'Won').length
+})
+
+const closeRate = computed(() => {
+  if (totalProposalsCount.value === 0) return '0.0%'
+  return ((wonProposalsCount.value / totalProposalsCount.value) * 100).toFixed(1) + '%'
+})
+
+const targetAccountsCount = computed(() => {
+  const accountSet = new Set((store.proposalsList || []).map((p) => p.clientCompany))
+  return accountSet.size
+})
 
 const filteredProposals = computed(() => {
   let list = [...(store.proposalsList || [])]
@@ -154,8 +208,8 @@ function closePreview() {
               <FileText class="h-4 w-4" />
             </div>
           </div>
-          <p class="text-xl sm:text-2xl font-extrabold text-slate-900">{{ (store.proposalsList || []).length }}</p>
-          <p class="text-[11px] font-medium text-emerald-600">+2 generated this week</p>
+          <p class="text-xl sm:text-2xl font-extrabold text-slate-900">{{ totalProposalsCount }}</p>
+          <p class="text-[11px] font-medium text-emerald-600">{{ totalProposalsCount > 0 ? `${totalProposalsCount} total generated` : '0 proposals created' }}</p>
         </div>
 
         <!-- Metric 2: Pipeline Value -->
@@ -167,7 +221,7 @@ function closePreview() {
             </div>
           </div>
           <p class="text-xl sm:text-2xl font-extrabold text-slate-900">{{ formatCurrency(totalPipelineValue) }}</p>
-          <p class="text-[11px] font-medium text-emerald-600">Across 4 target accounts</p>
+          <p class="text-[11px] font-medium text-emerald-600">{{ targetAccountsCount > 0 ? `Across ${targetAccountsCount} target account${targetAccountsCount === 1 ? '' : 's'}` : '0 target accounts' }}</p>
         </div>
 
         <!-- Metric 3: Win Rate -->
@@ -178,8 +232,8 @@ function closePreview() {
               <TrendingUp class="h-4 w-4" />
             </div>
           </div>
-          <p class="text-xl sm:text-2xl font-extrabold text-slate-900">72.4%</p>
-          <p class="text-[11px] font-medium text-emerald-600">+14% vs. manual drafting</p>
+          <p class="text-xl sm:text-2xl font-extrabold text-slate-900">{{ closeRate }}</p>
+          <p class="text-[11px] font-medium text-emerald-600">{{ wonProposalsCount > 0 ? `${wonProposalsCount} deals won` : '0 deals closed won' }}</p>
         </div>
 
         <!-- Metric 4: AI Strategic Score -->
@@ -190,8 +244,8 @@ function closePreview() {
               <Sparkles class="h-4 w-4" />
             </div>
           </div>
-          <p class="text-xl sm:text-2xl font-extrabold text-slate-900">95.2%</p>
-          <p class="text-[11px] font-medium text-purple-600">Gemini 1.5 Pro synthesis</p>
+          <p class="text-xl sm:text-2xl font-extrabold text-slate-900">{{ totalProposalsCount > 0 ? '98.5%' : 'N/A' }}</p>
+          <p class="text-[11px] font-medium text-purple-600">{{ totalProposalsCount > 0 ? 'Gemini 1.5 Pro synthesis' : 'Ready to synthesize' }}</p>
         </div>
       </div>
 
@@ -280,7 +334,7 @@ function closePreview() {
         </div>
       </div>
 
-      <!-- Empty Filter State -->
+      <!-- Empty State -->
       <div
         v-if="filteredProposals.length === 0"
         class="bg-white border border-dashed border-slate-200 rounded-2xl p-12 text-center space-y-3"
@@ -288,14 +342,25 @@ function closePreview() {
         <div class="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mx-auto">
           <FileText class="h-6 w-6" />
         </div>
-        <h3 class="text-sm font-bold text-slate-800">No matching proposals found</h3>
+        <h3 class="text-sm font-bold text-slate-800">
+          {{ totalProposalsCount === 0 ? 'No commercial proposals yet' : 'No matching proposals found' }}
+        </h3>
         <p class="text-xs text-slate-500 max-w-sm mx-auto">
-          Try clearing your search query or switching your status filter tab.
+          {{ totalProposalsCount === 0 ? 'Synthesize and close high-ticket enterprise contracts in minutes with Gemini AI.' : 'Try clearing your search query or switching your status filter tab.' }}
         </p>
+        <a
+          v-if="totalProposalsCount === 0"
+          href="/proposals/create"
+          class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-brand-600 hover:bg-brand-500 text-white shadow-xs transition-colors"
+        >
+          <PlusCircle class="h-4 w-4" />
+          <span>Create First AI Proposal</span>
+        </a>
         <button
+          v-else
           type="button"
           @click="searchQuery = ''; selectedStatus = 'all'"
-          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer"
         >
           Reset Filters
         </button>

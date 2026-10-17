@@ -3,6 +3,7 @@ import { computed, onMounted } from 'vue'
 import { usePage } from '@inertiajs/vue3'
 import { useProposalStore } from '@/stores/proposalStore'
 import { useAuthStore } from '@/stores/authStore'
+import { useAuthGuard } from '@/composables/useAuthGuard'
 import {
   Sparkles,
   Wand2,
@@ -21,6 +22,7 @@ import {
 const store = useProposalStore()
 const page = usePage()
 const authStore = useAuthStore()
+const authGuard = useAuthGuard()
 
 const currentUser = computed(() => {
   return page?.props?.auth?.user || authStore.user || null
@@ -48,6 +50,9 @@ function applyPreset(text) {
 }
 
 const handleGenerateSections = async () => {
+  if (!authGuard.requireAuth(() => handleGenerateSections(), { message: 'Sign in to generate full AI proposals.' })) {
+    return
+  }
   if (isPro.value) {
     store.isSubscribed = true
     store.activeAiModel = 'Gemini 1.5 Pro'

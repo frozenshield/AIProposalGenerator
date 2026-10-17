@@ -62,7 +62,14 @@ Authorized Signer: ${store.representativeName} (${store.representativeCompany})
 }
 
 function handlePrint() {
-  window.print()
+  const previousEditMode = isEditMode.value
+  isEditMode.value = false
+  setTimeout(() => {
+    window.print()
+    setTimeout(() => {
+      isEditMode.value = previousEditMode
+    }, 500)
+  }, 120)
 }
 
 function openSignatureModal(target = 'author') {
@@ -93,7 +100,7 @@ function clearClientSignature() {
 <template>
   <div class="space-y-4">
     <!-- Preview Toolbar with Edit Details Toggle -->
-    <div class="flex flex-wrap items-center justify-between gap-3 bg-white border border-slate-200 rounded-xl px-4 py-2.5 shadow-2xs">
+    <div class="flex flex-wrap items-center justify-between gap-3 bg-white border border-slate-200 rounded-xl px-4 py-2.5 shadow-2xs print:hidden">
       <div class="flex items-center gap-2">
         <span class="relative flex h-2.5 w-2.5">
           <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75"></span>
@@ -155,7 +162,10 @@ function clearClientSignature() {
     </div>
 
     <!-- Paper Document Canvas Wrapper -->
-    <div class="bg-white border border-slate-200/90 rounded-2xl shadow-xl shadow-slate-200/60 p-6 sm:p-10 transition-all text-slate-800 relative overflow-hidden">
+    <div
+      id="printable-proposal-canvas"
+      class="bg-white border border-slate-200/90 rounded-2xl shadow-xl shadow-slate-200/60 p-6 sm:p-10 transition-all text-slate-800 relative overflow-hidden print:p-0 print:border-none print:shadow-none print:rounded-none"
+    >
       <!-- Subtle top decorative bar -->
       <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-brand-600 via-indigo-500 to-purple-500"></div>
 
